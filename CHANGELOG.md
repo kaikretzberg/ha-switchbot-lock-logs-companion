@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.2 — 2026-10-08
+
+- Import archived fingerprint accesses into native Activity with original timestamps.
+- Persist delivered accesses across restarts and append accesses found by scheduled synchronization.
+- Keep historical imports separate from live automation triggers; resolve names when Activity is displayed.
+
 ## 2.0.1 — 2026-10-08
 
 - Clear name entry labels in the native user mapping form, with saved names preserved.

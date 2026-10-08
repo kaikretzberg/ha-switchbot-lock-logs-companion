@@ -111,3 +111,21 @@ class CompanionStore:
             await self.store.async_save(candidate)
             self.data = candidate
             return history
+
+    def activity_records(self, device_id: str) -> list[LogEntry]:
+        """Restore accesses already handed to Recorder across reloads."""
+        return [
+            LogEntry(**record)
+            for record in self.data["devices"].get(device_id, {}).get("activity", [])
+        ]
+
+    async def save_activity_records(
+        self, device_id: str, records: list[LogEntry]
+    ) -> None:
+        """Checkpoint delivered accesses without changing the raw archive."""
+        async with self.lock:
+            candidate = deepcopy(self.data)
+            device = candidate["devices"].setdefault(device_id, {"users": {}})
+            device["activity"] = [asdict(record) for record in records]
+            await self.store.async_save(candidate)
+            self.data = candidate

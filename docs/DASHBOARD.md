@@ -25,13 +25,16 @@ Sie zeigt die neuesten 30 Zutritte; für bis zu 100 den Wert `history[:30]` änd
 Die Vorlage folgt der HA-Instanzsprache (Deutsch oder Englisch).
 Alternativ stehen feste [deutsche](dashboard-de.yaml) und [englische](dashboard-en.yaml) Vorlagen bereit.
 
-Neue Live-Zutritte erscheinen automatisch unter **Aktivität** auf der
+Archivierte und neue Zutritte erscheinen automatisch unter **Aktivität** auf der
 Geräteseite des Log-Companions, z. B. „Kai hat das Schloss per Fingerabdruck
 entriegelt · 08.10.2026 09:20:00“. Im Dashboard ist dafür die Standardkarte
 **Aktivität** verfügbar: [activity.yaml](activity.yaml). Recorder und Logbuch
-müssen aktiviert sein und diese Ereignisse aufzeichnen. Alte Importe stehen
-in `history` und der Markdown-Karte; sie werden nicht als neue Live-Ereignisse
-in Aktivität nachgetragen. Sensoränderungen können dort zusätzlich erscheinen.
+müssen aktiviert sein und die Entität sowie diese Ereignisse aufzeichnen.
+Historische Zutritte werden mit ihrer ursprünglichen Uhrzeit einmalig übernommen.
+Der Importstand bleibt über Neustarts erhalten; nachgeholte Zutritte werden ergänzt.
+Importe lösen den Live-Automationstrigger nicht aus. Aktivität unterliegt der
+Recorder-Aufbewahrungsdauer; das separate Archiv bleibt erhalten. Sensoränderungen
+können dort zusätzlich erscheinen.
 
 Für Automationen auf **jedem** Zutritt den Ereignis-Trigger
 `switchbot_lock_logs_access` verwenden, auch wenn derselbe Benutzer zweimal
@@ -76,7 +79,10 @@ status. A pending fetch keeps the last confirmed name visible.
 The full raw archive is preserved separately. History attributes are excluded
 from Recorder snapshots to avoid duplicating the archive on every update.
 Live events are recorded through Logbook when enabled and not filtered out.
-Historical imports remain in the Markdown card and entity attributes.
+Archived accesses are also imported into Activity using their original timestamps.
+Delivered accesses are remembered across restarts, and recovered gaps are appended.
+Historical imports never replay the live automation trigger. Activity follows
+Recorder retention; the separate archive remains intact.
 
 Automations should trigger on `switchbot_lock_logs_access`, or on the sensor's
 `last_access_time` attribute, to detect repeated accesses by the same person.

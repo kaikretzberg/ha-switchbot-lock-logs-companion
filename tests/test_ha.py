@@ -854,3 +854,210 @@ async def test_automatic_native_card_language(hass, parent, language):
     assert action.native_value == "unknown"
     assert action.extra_state_attributes["action"] == 200
     await manager.async_shutdown()
+
+
+async def test_activity_backfill_original_times_restart_and_live_separation(
+    hass, parent
+):
+    from dataclasses import replace
+    from types import SimpleNamespace
+
+    entry, manager = await setup_coordinator(hass, parent)
+    manager.access_entity_id = "sensor.front_door_last_access"
+    await manager.store.set_user(parent.device.id, 10, "Kai")
+    unlock = parse_response(
+        bytes.fromhex("016ac673ec00020f007b030a000000"), parent.device.id, "lock_pro"
+    )
+    unlatch = replace(
+        unlock, source=1, value=64, timestamp=unlock.timestamp + 6, raw="paired"
+    )
+    second = replace(unlock, timestamp=unlock.timestamp + 60, raw="second")
+    locked = replace(unlock, source=1, action=1, user_id=None, raw="lock")
+    await manager.store.append_history(
+        parent.device.id, [unlock, unlatch, second, locked]
+    )
+    recorder = SimpleNamespace(
+        queue_task=lambda task: task.future.set_result(None),
+        async_add_executor_job=AsyncMock(return_value=set()),
+    )
+    imported, live = [], []
+    remove_imported = hass.bus.async_listen(
+        "switchbot_lock_logs_imported_access", imported.append
+    )
+    remove_live = hass.bus.async_listen("switchbot_lock_logs_access", live.append)
+    with patch.object(manager, "_activity_recorder", return_value=recorder):
+        await manager.import_activity()
+        await hass.async_block_till_done()
+        assert len(imported) == 2
+        assert not live
+        assert sorted(event.time_fired_timestamp for event in imported) == [
+            unlock.timestamp,
+            second.timestamp,
+        ]
+        assert all(
+            event.data["entity_id"] == manager.access_entity_id for event in imported
+        )
+        assert all(event.data["user_name"] == "Kai" for event in imported)
+        from custom_components.switchbot_lock_logs.logbook import async_describe_events
+
+        handlers = {}
+        async_describe_events(
+            hass, lambda domain, event, describe: handlers.update({event: describe})
+        )
+        describe = handlers["switchbot_lock_logs_imported_access"]
+        await manager.store.set_user(parent.device.id, 10, "Renamed")
+        assert "Renamed" in describe(imported[0])["message"]
+        await manager.store.set_user(parent.device.id, 10, None)
+        assert "ID 10" in describe(imported[0])["message"]
+        await manager.import_activity()
+        assert len(imported) == 2
+        # A normal restart restores the checkpoint, even if Recorder purged events.
+        store = CompanionStore(hass)
+        await store.load()
+        restored = LogsCoordinator(hass, entry, manager.target, store, 15)
+        restored.access_entity_id = manager.access_entity_id
+        with patch.object(restored, "_activity_recorder", return_value=recorder):
+            await restored.import_activity()
+            await hass.async_block_till_done()
+            assert len(imported) == 2
+            # Live accesses stay on the automation event, and are not imported twice.
+            third = replace(unlock, timestamp=unlock.timestamp + 120, raw="third")
+            await store.append_history(parent.device.id, [third])
+            restored.sync_pending = True
+            await restored.import_activity()
+            assert len(imported) == 2
+            restored._publish_access(third)
+            restored.sync_pending = False
+            await restored.import_activity()
+            await hass.async_block_till_done()
+            assert len(live) == 1
+            assert len(imported) == 2
+            # Gaps recovered by nightly/manual reads become historical Activity only.
+            fourth = replace(unlock, timestamp=unlock.timestamp + 180, raw="fourth")
+            with patch.object(restored.client, "fetch", return_value=[fourth]):
+                await restored.nightly_sync(None)
+            await hass.async_block_till_done()
+            assert len(imported) == 3
+            assert len(live) == 1
+        await restored.async_shutdown()
+    remove_imported()
+    remove_live()
+    await manager.async_shutdown()
+
+
+async def test_activity_recovers_existing_delivery_and_retries_checkpoint(hass, parent):
+    from types import SimpleNamespace
+
+    _, manager = await setup_coordinator(hass, parent)
+    manager.access_entity_id = "sensor.front_door_last_access"
+    unlock = parse_response(
+        bytes.fromhex("016ac673ec00020f007b030a000000"), parent.device.id, "lock_pro"
+    )
+    await manager.store.append_history(parent.device.id, [unlock])
+    recorder = SimpleNamespace(
+        queue_task=lambda task: task.future.set_result(None),
+        async_add_executor_job=AsyncMock(return_value={unlock.raw}),
+    )
+    imported = []
+    remove = hass.bus.async_listen(
+        "switchbot_lock_logs_imported_access", imported.append
+    )
+    with patch.object(manager, "_activity_recorder", return_value=recorder):
+        with patch.object(
+            manager.store.store, "async_save", side_effect=OSError("full")
+        ):
+            await manager.import_activity()
+            assert manager._activity_dirty
+        assert not imported  # Upgrade / interrupted checkpoint is not replayed.
+        await manager.import_activity()
+    assert [
+        record.raw for record in manager.store.activity_records(parent.device.id)
+    ] == [unlock.raw]
+    assert manager.store.history(parent.device.id) == [unlock]
+    remove()
+    await manager.async_shutdown()
+
+
+async def test_activity_import_is_stored_in_real_recorder(hass, parent):
+    from homeassistant.components.recorder import get_instance
+    from homeassistant.loader import async_setup as setup_loader
+    from homeassistant.setup import async_setup_component
+
+    setup_loader(hass)
+    from homeassistant.helpers.recorder import DATA_RECORDER, RecorderData
+
+    hass.data[DATA_RECORDER] = RecorderData()
+    assert await async_setup_component(
+        hass, "recorder", {"recorder": {"auto_purge": False}}
+    )
+    hass.data["logbook"] = {}
+    await hass.async_start()
+    await hass.async_block_till_done()
+    recorder = get_instance(hass)
+    await recorder.async_block_till_done()
+    _, manager = await setup_coordinator(hass, parent)
+    manager.access_entity_id = "sensor.front_door_last_access"
+    unlock = parse_response(
+        bytes.fromhex("016ac673ec00020f007b030a000000"), parent.device.id, "lock_pro"
+    )
+    await manager.store.append_history(parent.device.id, [unlock])
+    assert manager._activity_recorder("switchbot_lock_logs_imported_access") is recorder
+    assert manager.store.history(parent.device.id) == [unlock]
+    await manager.import_activity()
+    assert manager._activity_records
+    assert await recorder.async_add_executor_job(manager._recorded_access_raws) == {
+        unlock.raw
+    }
+    # If a process stopped after the DB commit but before the store checkpoint,
+    # the next import discovers the existing event instead of inserting another.
+    manager._activity_records = []
+    manager._activity_raws.clear()
+    manager._activity_times.clear()
+    manager._activity_recovered = False
+    await manager.import_activity()
+
+    def stored_times():
+        from homeassistant.components.recorder.db_schema import Events, EventTypes
+        from homeassistant.components.recorder.util import session_scope
+        from sqlalchemy import select
+
+        with session_scope(hass=hass, read_only=True) as session:
+            return list(
+                session.scalars(
+                    select(Events.time_fired_ts)
+                    .join(EventTypes, Events.event_type_id == EventTypes.event_type_id)
+                    .where(
+                        EventTypes.event_type == "switchbot_lock_logs_imported_access"
+                    )
+                )
+            )
+
+    assert await recorder.async_add_executor_job(stored_times) == [
+        float(unlock.timestamp)
+    ]
+    from datetime import timedelta
+
+    from homeassistant.components.logbook.models import LogbookConfig
+    from homeassistant.components.logbook.processor import EventProcessor
+    from homeassistant.util import dt as dt_util
+
+    from custom_components.switchbot_lock_logs.logbook import async_describe_events
+
+    handlers = {}
+    async_describe_events(
+        hass,
+        lambda domain, event, describe: handlers.update({event: (domain, describe)}),
+    )
+    hass.data["logbook"] = LogbookConfig(handlers)
+    await manager.store.set_user(parent.device.id, 10, "Kai")
+    processor = EventProcessor(
+        hass, list(handlers), entity_ids=[manager.access_entity_id], timestamp=True
+    )
+    start = dt_util.utc_from_timestamp(unlock.timestamp) - timedelta(seconds=1)
+    rows = await recorder.async_add_executor_job(
+        processor.get_events, start, start + timedelta(seconds=2)
+    )
+    assert len(rows) == 1
+    assert rows[0]["entity_id"] == manager.access_entity_id
+    assert "Kai" in rows[0]["message"]
+    await manager.async_shutdown()

@@ -11,6 +11,7 @@ from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
 )
+from homeassistant.helpers.start import async_at_start
 
 from .const import DEFAULT_INTERVAL, DEFAULT_MAX_ENTRIES, DOMAIN
 from .coordinator import LogsCoordinator
@@ -153,6 +154,7 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
         await manager.async_refresh()
     hass.data[DOMAIN]["coordinators"][entry.entry_id] = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(async_at_start(hass, manager.import_activity))
     entry.async_on_unload(entry.add_update_listener(async_options_updated))
     entry.async_on_unload(
         async_track_state_change_event(

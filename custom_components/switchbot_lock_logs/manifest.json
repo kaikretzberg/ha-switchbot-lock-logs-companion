@@ -2,7 +2,8 @@
   "domain": "switchbot_lock_logs",
   "name": "SwitchBot Lock Logs",
   "after_dependencies": [
-    "logbook"
+    "logbook",
+    "recorder"
   ],
   "codeowners": [
     "@kaikretzberg"
@@ -15,5 +16,5 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/kaikretzberg/ha-switchbot-lock-logs-companion/issues",
-  "version": "2.0.1"
+  "version": "2.0.2"
 }

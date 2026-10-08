@@ -86,12 +86,18 @@ JavaScript resource is needed.
   open its code editor, paste [dashboard.yaml](docs/dashboard.yaml) and replace
   `sensor.YOUR_LOCK_LAST_ACCESS` with your Last access entity ID. It follows the
   HA instance language automatically and displays the latest 30 accesses.
-- For future live accesses, use an **Activity** card with the Last access entity:
+- For imported and future accesses, use an **Activity** card with the Last access entity:
   [activity.yaml](docs/activity.yaml).
 
-Future live accesses also appear in the companion device's **Activity** section
-with name and time. Recorder and Logbook must be enabled and include the events.
-Older imported events appear in the entity's history and Markdown card.
+Archived fingerprint accesses are imported automatically into the Last access
+entity's and companion device's **Activity** with their original dates and times.
+New accesses, including gaps found during polling or the nightly sync, are appended.
+Delivered accesses are remembered across restarts; unlock/unlatch pairs appear once.
+Names are resolved when viewing Activity, so later name changes also apply there.
+Recorder and Logbook must be enabled and include the entity and events. Activity
+uses Recorder's retention period; the separate raw archive remains intact. Historical
+imports use `switchbot_lock_logs_imported_access`, so they never replay the live
+`switchbot_lock_logs_access` automation trigger.
 See [all native card examples](docs/DASHBOARD.md).
 
 ### Automations and actions
@@ -216,13 +222,20 @@ Nutze ausschließlich die Standardkarten **Entitäten**, **Markdown** oder
   Code-Editor öffnen, [dashboard.yaml](docs/dashboard.yaml) einfügen und
   `sensor.YOUR_LOCK_LAST_ACCESS` durch deine Sensor-ID ersetzen. Die Vorlage
   folgt automatisch der HA-Instanzsprache und zeigt die neuesten 30 Zutritte.
-- Neue Live-Zutritte: **Aktivität**-Karte mit dem Sensor verwenden:
+- Importierte und neue Zutritte: **Aktivität**-Karte mit dem Sensor verwenden:
   [activity.yaml](docs/activity.yaml).
 
-Neue Live-Zutritte erscheinen auch unter **Aktivität** auf der Geräteseite des
-Log-Companions mit Name und Uhrzeit. Recorder und Logbuch müssen aktiv sein und
-diese Ereignisse erfassen. Alte Importe stehen im Entitätsattribut und in der
-Markdown-Karte. Weitere Beispiele: [Dashboard-Anleitung](docs/DASHBOARD.md).
+Archivierte Fingerabdruck-Zutritte werden automatisch mit ihrem ursprünglichen
+Datum und ihrer Uhrzeit in die **Aktivität** der Entität „Letzter Zutritt“ und des
+zugehörigen Geräts importiert. Neue Zutritte und beim Intervallabruf oder nächtlichen
+Abgleich gefundene Lücken werden ergänzt. Der Importstand bleibt über Neustarts
+hinweg gespeichert; Entriegelung und zugehörige Riegelöffnung erscheinen einmal.
+Spätere Namensänderungen gelten auch für die Aktivitätsansicht. Recorder und Logbook
+müssen aktiviert sein und die Entität sowie Ereignisse einschließen. Die Aktivität
+unterliegt der Aufbewahrungsdauer des Recorders; das separate Roharchiv bleibt erhalten.
+Historische Importe verwenden `switchbot_lock_logs_imported_access` und lösen den
+Live-Automationstrigger `switchbot_lock_logs_access` nicht aus.
+Siehe [alle nativen Kartenbeispiele](docs/DASHBOARD.md).
 
 ### Automationen und Aktionen
 

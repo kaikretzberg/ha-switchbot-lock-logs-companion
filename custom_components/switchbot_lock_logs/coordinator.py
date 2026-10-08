@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from bisect import bisect_left, insort
 from datetime import timedelta
 from typing import Any
 
@@ -11,6 +12,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from .access import fingerprint_accesses
 from .const import DOMAIN
 from .lock_logs.client import LockLogsClient
 from .lock_logs.models import LogEntry
@@ -43,6 +45,15 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
         self.access_entity_id: str | None = None
         self._last_notified_access: LogEntry | None = None
         self.last_update_success = False
+        self._activity_lock = asyncio.Lock()
+        self._activity_records: list[LogEntry] = []
+        self._activity_raws: set[str] = set()
+        self._activity_times: dict[tuple[int | None, str], list[int]] = {}
+        self._activity_dirty = False
+        self._activity_recovered = False
+        for record in store.activity_records(target.device_id):
+            self._remember_activity(record)
+        self._activity_dirty = False
 
     async def _fetch(self, base_time: int, max_entries: int) -> list[LogEntry]:
         async with self.fetch_lock:
@@ -59,6 +70,7 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
 
     async def _async_update_data(self) -> list[LogEntry]:
         await self._fetch(0, 1)
+        await self.import_activity()
         return self.store.history(self.target.device_id)
 
     async def fetch_manual(
@@ -71,6 +83,7 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
             self.async_set_update_error(err)
             raise
         self.async_set_updated_data(self.store.history(self.target.device_id))
+        await self.import_activity()
         return [log.as_dict(self.store.users(self.target.device_id)) for log in records]
 
     @callback
@@ -118,6 +131,7 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
         finally:
             self.sync_pending = False
             self.async_update_listeners()
+            await self.import_activity()
 
     def latest_access(self) -> LogEntry | None:
         """Never attribute a new unlock to a user from an older access."""
@@ -152,6 +166,8 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
         """Expose confirmed live accesses to the companion device's Activity."""
         from homeassistant.helpers import device_registry as dr
 
+        if self._activity_contains(record):
+            return
         previous = self._last_notified_access
         if previous is not None and (
             previous.raw == record.raw
@@ -171,6 +187,8 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
             else None
         )
         self._last_notified_access = record
+        if self._activity_recorder("switchbot_lock_logs_access") is not None:
+            self._remember_activity(record)
         self.hass.bus.async_fire(
             "switchbot_lock_logs_access",
             {
@@ -178,5 +196,155 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
                 "device_id": device.id if device else self.target.device_id,
                 "entity_id": self.access_entity_id,
                 "lock_name": self.target.name,
+                "lock_device_id": self.target.device_id,
             },
+            time_fired=float(record.timestamp),
         )
+
+    def _activity_contains(self, record: LogEntry) -> bool:
+        """An unlock and nearby unlatch for the same user describe one visit."""
+        if record.raw in self._activity_raws:
+            return True
+        action = record.as_dict({})["action_name"]
+        other = "unlatch" if action == "unlock" else "unlock"
+        times = self._activity_times.get((record.user_id, other), [])
+        index = bisect_left(times, record.timestamp - 15)
+        return index < len(times) and times[index] <= record.timestamp + 15
+
+    def _remember_activity(self, record: LogEntry) -> None:
+        if not self._activity_contains(record):
+            self._activity_records.append(record)
+            self._activity_raws.add(record.raw)
+            times = self._activity_times.setdefault(
+                (record.user_id, record.as_dict({})["action_name"]), []
+            )
+            insort(times, record.timestamp)
+            self._activity_dirty = True
+
+    def _activity_recorder(self, event_type: str) -> Any:
+        """Do not mark entries as delivered while Recorder excludes them."""
+        from homeassistant.components.recorder import get_instance
+        from homeassistant.helpers.recorder import DATA_INSTANCE
+
+        if (
+            not self.access_entity_id
+            or DATA_INSTANCE not in self.hass.data
+            or "logbook" not in self.hass.data
+        ):
+            return None
+        recorder = get_instance(self.hass)
+        if (
+            not recorder.recording
+            or not recorder.enabled
+            or event_type in recorder.exclude_event_types
+            or (
+                recorder.entity_filter is not None
+                and not recorder.entity_filter(self.access_entity_id)
+            )
+        ):
+            return None
+        return recorder
+
+    def _recorded_access_raws(self) -> set[str]:
+        """Recover deliveries after an upgrade or interrupted checkpoint."""
+        import json
+
+        from homeassistant.components.recorder.db_schema import (
+            EventData,
+            Events,
+            EventTypes,
+        )
+        from homeassistant.components.recorder.util import session_scope
+        from sqlalchemy import select
+
+        statement = (
+            select(EventData.shared_data)
+            .join(Events, Events.data_id == EventData.data_id)
+            .join(EventTypes, Events.event_type_id == EventTypes.event_type_id)
+            .where(
+                EventTypes.event_type.in_(
+                    (
+                        "switchbot_lock_logs_access",
+                        "switchbot_lock_logs_imported_access",
+                    )
+                )
+            )
+        )
+        with session_scope(hass=self.hass, read_only=True) as session:
+            return {
+                data["raw"]
+                for (encoded,) in session.execute(statement)
+                if encoded
+                and (data := json.loads(encoded)).get("entity_id")
+                == self.access_entity_id
+                and data.get("raw")
+            }
+
+    async def _flush_activity(self, recorder: Any) -> None:
+        """Queue a commit barrier even when the worker just dequeued an event."""
+        from homeassistant.components.recorder.tasks import SynchronizeTask
+
+        future: asyncio.Future[None] = self.hass.loop.create_future()
+        recorder.queue_task(SynchronizeTask(future))
+        async with asyncio.timeout(30):
+            await future
+
+    async def import_activity(self, *_: Any) -> None:
+        """Activity failures must not invalidate a successful Bluetooth read."""
+        try:
+            await self._import_activity()
+        except Exception:
+            _LOGGER.exception("Cannot synchronize Activity for %s", self.target.name)
+
+    async def _import_activity(self) -> None:
+        """Backfill native Activity without replaying the live automation event."""
+        if not self.access_entity_id or self.sync_pending:
+            return
+        from homeassistant.helpers import device_registry as dr
+
+        recorder = self._activity_recorder("switchbot_lock_logs_imported_access")
+        if recorder is None or self.config_entry is None:
+            return
+        async with self._activity_lock:
+            if self.sync_pending:
+                return
+            if not self._activity_recovered:
+                await self._flush_activity(recorder)
+                delivered = await recorder.async_add_executor_job(
+                    self._recorded_access_raws
+                )
+                for record in self.store.history(self.target.device_id):
+                    if record.raw in delivered:
+                        self._remember_activity(record)
+                self._activity_recovered = True
+            if self.sync_pending:
+                return
+            device = dr.async_get(self.hass).async_get_device_by_identifier(
+                (DOMAIN, self.target.device_id), self.config_entry.entry_id
+            )
+            users = self.store.users(self.target.device_id)
+            for record in reversed(
+                fingerprint_accesses(self.store.history(self.target.device_id))
+            ):
+                if self._activity_contains(record):
+                    continue
+                self.hass.bus.async_fire(
+                    "switchbot_lock_logs_imported_access",
+                    {
+                        **record.as_dict(users),
+                        "device_id": device.id if device else self.target.device_id,
+                        "entity_id": self.access_entity_id,
+                        "lock_name": self.target.name,
+                        "lock_device_id": self.target.device_id,
+                    },
+                    time_fired=float(record.timestamp),
+                )
+                self._remember_activity(record)
+            if self._activity_dirty:
+                # Wait for queued Recorder writes before checkpointing delivery.
+                # On storage failure retain the in-memory set and retry the save.
+                await self._flush_activity(recorder)
+                await self.store.save_activity_records(
+                    self.target.device_id, self._activity_records
+                )
+                self._activity_dirty = False
