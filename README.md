@@ -55,10 +55,10 @@ A linked **Logs** device contains:
 | Entity | Purpose |
 | --- | --- |
 | Last access | Last fingerprint user's name, with time, user ID and history attributes |
-| Last activity | Time of the latest raw lock event |
+| Last activity | Time of the latest fingerprint opening |
 | Last user | User attached to the latest applicable event |
-| Last action | Latest raw event's action |
-| Log count | Total number of archived raw records |
+| Last action | Latest fingerprint opening action |
+| Log count | Number of archived fingerprint accesses |
 
 The **Last access** entity has `last_access_time` (ISO timestamp),
 `last_access_local` (time in your HA time zone), `last_access_user_id`,
@@ -116,7 +116,7 @@ Under **Developer tools → Actions**:
 
 | Action | Purpose |
 | --- | --- |
-| `switchbot_lock_logs.get_lock_logs` | Read fresh history and update the archive |
+| `switchbot_lock_logs.get_lock_logs` | Read history, return only fingerprint openings and update the raw archive |
 | `switchbot_lock_logs.get_stored_lock_logs` | Return the full archive without a Bluetooth request |
 | `switchbot_lock_logs.set_lock_user_name` | Set one user-ID mapping |
 | `switchbot_lock_logs.delete_lock_user_name` | Remove one mapping |
@@ -194,10 +194,10 @@ Ein mit dem Schloss verknüpftes **Logs**-Gerät enthält:
 | Entität | Funktion |
 | --- | --- |
 | Letzter Zutritt | Letzter Fingerabdruck-Benutzer mit Zeitpunkt, ID und Verlauf als Attribute |
-| Letzte Aktivität | Zeitpunkt des neuesten Rohereignisses |
+| Letzte Aktivität | Zeitpunkt der letzten Fingerabdruck-Öffnung |
 | Letzter Benutzer | Benutzer des zuletzt zuordenbaren Ereignisses |
-| Letzte Aktion | Aktion des neuesten Rohereignisses |
-| Anzahl Protokolleinträge | Gesamtzahl gespeicherter Rohereignisse |
+| Letzte Aktion | Aktion der letzten Fingerabdruck-Öffnung |
+| Anzahl Protokolleinträge | Anzahl gespeicherter Fingerabdruck-Zutritte |
 
 Die Entität **Letzter Zutritt** enthält `last_access_time` (ISO-Zeitstempel),
 `last_access_local` (Datum und Uhrzeit in deiner HA-Zeitzone),
@@ -256,7 +256,7 @@ Unter **Entwicklerwerkzeuge → Aktionen** stehen bereit:
 
 | Aktion | Funktion |
 | --- | --- |
-| `switchbot_lock_logs.get_lock_logs` | Aktuellen Verlauf abrufen und Archiv ergänzen |
+| `switchbot_lock_logs.get_lock_logs` | Verlauf abrufen, nur Fingerabdruck-Öffnungen ausgeben und Roharchiv ergänzen |
 | `switchbot_lock_logs.get_stored_lock_logs` | Vollständiges Archiv ohne Bluetooth-Abfrage ausgeben |
 | `switchbot_lock_logs.set_lock_user_name` | Einen Namen zuordnen |
 | `switchbot_lock_logs.delete_lock_user_name` | Eine Zuordnung entfernen |

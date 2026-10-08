@@ -26,6 +26,7 @@ from custom_components.switchbot_lock_logs.sensor import LogSensor
 from custom_components.switchbot_lock_logs.storage import CompanionStore
 
 RECORD = bytes.fromhex("016553f10002010164590307010000")
+OPEN_RECORD = bytes.fromhex("016553f10000020f007b0307000000")
 
 
 @pytest.mark.parametrize("model", ["lock", "lock_pro", "lock_lite", "lock_ultra"])
@@ -190,7 +191,9 @@ async def test_services_update_sensors_and_user_mapping(hass, parent):
     listener = Mock()
     remove = manager.async_add_listener(lambda: listener())
     with patch.object(
-        manager.client, "fetch", return_value=[parse_response(RECORD, parent.device.id)]
+        manager.client,
+        "fetch",
+        return_value=[parse_response(OPEN_RECORD, parent.device.id, "lock_pro")],
     ) as fetch:
         result = await hass.services.async_call(
             DOMAIN,
@@ -268,12 +271,14 @@ async def test_sensors_timestamp_and_empty(hass, parent):
     count = LogSensor(manager, "log_count", parent.device)
     assert sensor.native_value is None
     assert count.native_value == 0
-    manager.async_set_updated_data([parse_response(RECORD, parent.device.id)])
+    manager.async_set_updated_data(
+        [parse_response(OPEN_RECORD, parent.device.id, "lock_pro")]
+    )
     assert sensor.native_value.isoformat() == "2023-11-14T22:13:20+00:00"
     assert sensor.device_info["via_device_id"] == parent.device.id
     assert sensor.device_info["identifiers"] == {(DOMAIN, parent.device.id)}
     assert count.native_value == 1
-    assert count.extra_state_attributes["logs"][0]["raw"] == RECORD[1:].hex()
+    assert count.extra_state_attributes["logs"][0]["raw"] == OPEN_RECORD[1:].hex()
     manager.async_set_updated_data([])
     assert sensor.native_value is None
     assert count.extra_state_attributes["logs"] == []
@@ -389,7 +394,7 @@ async def test_dashboard_template_renders_history_and_offline(hass, parent, lang
     from homeassistant.util import dt as dt_util
 
     _, manager = await setup_coordinator(hass, parent)
-    original = parse_response(RECORD, parent.device.id)
+    original = parse_response(OPEN_RECORD, parent.device.id, "lock_pro")
     latest = replace(original, timestamp=1791391500)
     older = replace(original, timestamp=1791305100, user_id=None)
     manager.async_set_updated_data([latest, older])
@@ -406,12 +411,12 @@ async def test_dashboard_template_renders_history_and_offline(hass, parent, lang
     try:
         result = template.async_render({"config": config}, parse_result=False)
         assert "07.10.2026" in result
-        assert "06.10.2026" in result
+        assert "06.10.2026" not in result
         assert "18:45" in result
         assert "<script>" not in result
         assert "&lt;script&gt;" in result
-        assert "Action 1" in result
-        assert "Source 1" in result
+        assert "Action 15" in result
+        assert "Source 2" in result
         hass.states.async_set(
             "sensor.YOUR_LOCK_LOG_COUNT", "unavailable", sensor.extra_state_attributes
         )
@@ -849,8 +854,8 @@ async def test_automatic_native_card_language(hass, parent, language):
     from dataclasses import replace
 
     manager.async_set_updated_data([replace(unlock, action=200, raw="unknown")])
-    assert action.native_value == "unknown"
-    assert action.extra_state_attributes["action"] == 200
+    assert action.native_value is None
+    assert action.extra_state_attributes == {}
     await manager.async_shutdown()
 
 
@@ -1082,4 +1087,57 @@ async def test_confirmed_last_access_survives_failed_reads_and_offline_lock(
     assert sensor.extra_state_attributes["last_sync_success"] is False
     manager.async_set_updated_data([])
     assert not sensor.available  # No confirmed access to retain.
+    await manager.async_shutdown()
+
+
+async def test_fresh_logs_and_visible_sensors_hide_unknown_and_lock_events(
+    hass, parent
+):
+    from dataclasses import replace
+
+    _, manager = await setup_coordinator(hass, parent)
+    opening = parse_response(
+        bytes.fromhex("016ac673f200010f407b030a000000"), parent.device.id, "lock_pro"
+    )
+    unknown = replace(
+        opening,
+        source=3,
+        action=0,
+        value=0,
+        user_id=None,
+        raw="unknown",
+        timestamp=opening.timestamp + 60,
+    )
+    locked = replace(
+        opening,
+        source=1,
+        action=1,
+        value=0,
+        user_id=None,
+        raw="lock",
+        timestamp=opening.timestamp + 120,
+    )
+    with patch.object(manager.client, "fetch", return_value=[locked, unknown, opening]):
+        result = await hass.services.async_call(
+            DOMAIN,
+            "get_lock_logs",
+            {"device_id": parent.device.id, "max_entries": 3},
+            blocking=True,
+            return_response=True,
+        )
+    assert result["count"] == 1
+    assert result["fetched_count"] == 3
+    assert result["logs"][0]["action_name"] == "unlatch"
+    assert LogSensor(manager, "last_action", parent.device).native_value == "unlatch"
+    assert LogSensor(manager, "log_count", parent.device).native_value == 1
+    assert LogSensor(manager, "last_user", parent.device).native_value == "User 10"
+    assert (
+        len(
+            LogSensor(manager, "log_count", parent.device).extra_state_attributes[
+                "logs"
+            ]
+        )
+        == 1
+    )
+    assert len(manager.store.history(parent.device.id)) == 3
     await manager.async_shutdown()

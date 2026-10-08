@@ -1,6 +1,8 @@
 # Changelog
 
-## 2.0.3 — 2026-10-08
+## 2.0.4 — 2026-10-08
+
+- Show only fingerprint openings in sensors and fresh log responses; retain all raw records in the separate archive.
 
 - Short Activity messages without repeating the native date and time.
 - Keep the confirmed Last access visible during Bluetooth outages or failed reads.

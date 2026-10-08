@@ -136,7 +136,7 @@
   "services": {
     "get_lock_logs": {
       "name": "Schlossprotokoll abrufen",
-      "description": "Historie abrufen, Sensoren aktualisieren und das Ergebnis als Antwort zurückgeben.",
+      "description": "Lädt Schlossprotokolle und gibt nur Fingerabdruck-Öffnungen zurück. Verriegelungen und unbekannte Ereignisse werden ausgeblendet. Das vollständige Roharchiv bleibt erhalten. Die maximale Eintragszahl begrenzt den Bluetooth-Abruf; die angezeigte Anzahl kann kleiner sein.",
       "fields": {
         "device_id": {
           "name": "Gerät",

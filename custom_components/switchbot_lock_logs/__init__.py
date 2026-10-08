@@ -13,6 +13,7 @@ from homeassistant.helpers.event import (
 )
 from homeassistant.helpers.start import async_at_start
 
+from .access import fingerprint_accesses
 from .const import DEFAULT_INTERVAL, DEFAULT_MAX_ENTRIES, DOMAIN
 from .coordinator import LogsCoordinator
 from .lock_logs.client import resolve_target
@@ -58,7 +59,20 @@ def register_services(hass: Any) -> None:
             raise HomeAssistantError(
                 translation_domain=DOMAIN, translation_key="fetch_logs_error"
             ) from err
-        return {"device_id": manager.target.device_id, "logs": logs, "count": len(logs)}
+        fresh_raws = {log["raw"] for log in logs}
+        records = [
+            record
+            for record in manager.store.history(manager.target.device_id)
+            if record.raw in fresh_raws
+        ]
+        users = manager.store.users(manager.target.device_id)
+        accesses = [record.as_dict(users) for record in fingerprint_accesses(records)]
+        return {
+            "device_id": manager.target.device_id,
+            "logs": accesses,
+            "count": len(accesses),
+            "fetched_count": len(logs),
+        }
 
     async def stored_logs(call: Any) -> dict[str, Any]:
         manager = coordinator(call)

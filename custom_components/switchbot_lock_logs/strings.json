@@ -90,7 +90,7 @@
   "services": {
     "get_lock_logs": {
       "name": "Get lock logs",
-      "description": "Retrieve lock operation history and update sensors.",
+      "description": "Fetches lock records and returns only fingerprint openings. Locking and unknown events are hidden; the complete raw archive is preserved. The maximum entry count limits the Bluetooth request, so fewer openings may be displayed.",
       "fields": {
         "device_id": {
           "name": "Device",

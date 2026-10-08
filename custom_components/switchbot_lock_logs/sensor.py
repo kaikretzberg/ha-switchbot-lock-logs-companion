@@ -83,9 +83,9 @@ class LogSensor(CoordinatorEntity[LogsCoordinator], SensorEntity):
 
     @property
     def native_value(self) -> datetime | str | int | None:
-        logs = self.coordinator.data or []
+        logs = fingerprint_accesses(self.coordinator.data or [])
         if self.key == "last_access":
-            accesses = fingerprint_accesses(logs)
+            accesses = logs
             if not accesses:
                 return None
             return accesses[0].as_dict(
@@ -154,13 +154,17 @@ class LogSensor(CoordinatorEntity[LogsCoordinator], SensorEntity):
             users = self.coordinator.store.users(self.coordinator.target.device_id)
             return {
                 "archived_count": len(self.coordinator.data or []),
-                "displayed_count": min(100, len(self.coordinator.data or [])),
+                "displayed_count": min(
+                    100, len(fingerprint_accesses(self.coordinator.data or []))
+                ),
                 "sync_pending": self.coordinator.sync_pending,
                 "logs": [
-                    log.as_dict(users) for log in (self.coordinator.data or [])[:100]
+                    log.as_dict(users)
+                    for log in fingerprint_accesses(self.coordinator.data or [])[:100]
                 ],
             }
-        if not self.coordinator.data:
+        accesses = fingerprint_accesses(self.coordinator.data or [])
+        if not accesses:
             return {}
-        latest = self.coordinator.data[0]
+        latest = accesses[0]
         return latest.as_dict(self.coordinator.store.users(latest.device_id))
