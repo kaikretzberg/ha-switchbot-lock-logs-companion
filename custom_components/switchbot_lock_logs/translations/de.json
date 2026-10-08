@@ -21,7 +21,7 @@
       },
       "users": {
         "title": "Benutzer benennen",
-        "description": "Folgende IDs wurden in den Logs gefunden. Trage unten für jede ID einen Namen ein.\n\nEine automatische Namenszuordnung ist nicht möglich: Die SwitchBot-App verwaltet die Namen; das Schlossprotokoll liefert nur Benutzer-IDs. Vergleiche die unten genannten Zeiten mit der iOS / Android App.\n\nSwitchBot-App Startseite → Lock auswählen → Ereignisprotokoll\n\n{count} unterschiedliche Ereignisse verfügbar. Die Zeiten werden in deiner Home-Assistant-Zeitzone angezeigt. Bereits gespeicherte IDs werden ebenfalls angeboten. Vorhandene Namen sind vorausgefüllt; ein leeres Feld entfernt die Zuordnung."
+        "description": "Folgende IDs wurden in den Logs gefunden. Trage unten für jede ID einen Namen ein.\n\nEine automatische Namenszuordnung ist nicht möglich: Die SwitchBot-App verwaltet die Namen; das Schlossprotokoll liefert nur Benutzer-IDs. Vergleiche den Zeitstempel der jeweiligen ID mit dem Ereignisprotokoll in der iOS / Android App. Beispiel: Suche für ID 10 die Aktion zur unten angegebenen Uhrzeit. Dort siehst du, wer das Schloss geöffnet hat. Trage diesen Namen in das Feld unter ID 10 ein. Wiederhole das für die weiteren IDs.\n\nSwitchBot-App Startseite → Lock auswählen → Ereignisprotokoll\n\n{count} unterschiedliche Ereignisse verfügbar. Die Zeiten werden in deiner Home-Assistant-Zeitzone angezeigt. Bereits gespeicherte IDs werden ebenfalls angeboten. Vorhandene Namen sind vorausgefüllt; ein leeres Feld entfernt die Zuordnung."
       },
       "fetch_failed": {
         "title": "Verlauf konnte nicht abgerufen werden",
@@ -68,7 +68,7 @@
       },
       "users": {
         "title": "Benutzer benennen",
-        "description": "Folgende IDs wurden in den Logs gefunden. Trage unten für jede ID einen Namen ein.\n\nEine automatische Namenszuordnung ist nicht möglich: Die SwitchBot-App verwaltet die Namen; das Schlossprotokoll liefert nur Benutzer-IDs. Vergleiche die unten genannten Zeiten mit der iOS / Android App.\n\nSwitchBot-App Startseite → Lock auswählen → Ereignisprotokoll\n\n{count} unterschiedliche Ereignisse verfügbar. Die Zeiten werden in deiner Home-Assistant-Zeitzone angezeigt. Bereits gespeicherte IDs werden ebenfalls angeboten. Vorhandene Namen sind vorausgefüllt; ein leeres Feld entfernt die Zuordnung."
+        "description": "Folgende IDs wurden in den Logs gefunden. Trage unten für jede ID einen Namen ein.\n\nEine automatische Namenszuordnung ist nicht möglich: Die SwitchBot-App verwaltet die Namen; das Schlossprotokoll liefert nur Benutzer-IDs. Vergleiche den Zeitstempel der jeweiligen ID mit dem Ereignisprotokoll in der iOS / Android App. Beispiel: Suche für ID 10 die Aktion zur unten angegebenen Uhrzeit. Dort siehst du, wer das Schloss geöffnet hat. Trage diesen Namen in das Feld unter ID 10 ein. Wiederhole das für die weiteren IDs.\n\nSwitchBot-App Startseite → Lock auswählen → Ereignisprotokoll\n\n{count} unterschiedliche Ereignisse verfügbar. Die Zeiten werden in deiner Home-Assistant-Zeitzone angezeigt. Bereits gespeicherte IDs werden ebenfalls angeboten. Vorhandene Namen sind vorausgefüllt; ein leeres Feld entfernt die Zuordnung."
       },
       "fetch_failed": {
         "title": "Verlauf konnte nicht abgerufen werden",

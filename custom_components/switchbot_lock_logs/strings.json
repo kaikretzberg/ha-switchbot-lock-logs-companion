@@ -21,7 +21,7 @@
       },
       "users": {
         "title": "Name your users",
-        "description": "The following IDs were found in the logs. Enter a name for each ID below.\n\nAutomatic name assignment is unavailable: The SwitchBot app manages the names; the lock history only supplies user IDs. Compare the times below with the iOS / Android app.\n\nSwitchBot app Home → Select your lock → Event log\n\n{count} unique events available. Times use your Home Assistant time zone. Previously saved IDs are also included. Existing names are prefilled; an empty field removes the mapping."
+        "description": "The following IDs were found in the logs. Enter a name for each ID below.\n\nAutomatic name assignment is unavailable: The SwitchBot app manages the names; the lock history only supplies user IDs. Compare each ID’s timestamp with the event log in the iOS / Android app. For example, find the action at the time shown below for ID 10. The app shows who unlocked the lock at that time. Enter that name in the field under ID 10, then repeat for the other IDs.\n\nSwitchBot app Home → Select your lock → Event log\n\n{count} unique events available. Times use your Home Assistant time zone. Previously saved IDs are also included. Existing names are prefilled; an empty field removes the mapping."
       },
       "fetch_failed": {
         "title": "Could not download history",
@@ -166,7 +166,7 @@
       },
       "users": {
         "title": "Name your users",
-        "description": "The following IDs were found in the logs. Enter a name for each ID below.\n\nAutomatic name assignment is unavailable: The SwitchBot app manages the names; the lock history only supplies user IDs. Compare the times below with the iOS / Android app.\n\nSwitchBot app Home → Select your lock → Event log\n\n{count} unique events available. Times use your Home Assistant time zone. Previously saved IDs are also included. Existing names are prefilled; an empty field removes the mapping."
+        "description": "The following IDs were found in the logs. Enter a name for each ID below.\n\nAutomatic name assignment is unavailable: The SwitchBot app manages the names; the lock history only supplies user IDs. Compare each ID’s timestamp with the event log in the iOS / Android app. For example, find the action at the time shown below for ID 10. The app shows who unlocked the lock at that time. Enter that name in the field under ID 10, then repeat for the other IDs.\n\nSwitchBot app Home → Select your lock → Event log\n\n{count} unique events available. Times use your Home Assistant time zone. Previously saved IDs are also included. Existing names are prefilled; an empty field removes the mapping."
       },
       "fetch_failed": {
         "title": "Could not download history",

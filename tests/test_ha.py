@@ -458,7 +458,14 @@ async def test_user_mapping_options_fetch_and_atomic_save(hass, parent):
     form = await flow.async_step_users()
     sections = form["data_schema"]({})
     assert len(sections) == 3
-    assert sections[flow._section_titles[7]]["ID 7"] == "Old"
+    assert sections[flow._section_titles[7]]["Enter a name"] == "Old"
+    assert sections[flow._section_titles[12]]["Enter a name"] == ""
+    hass.config.language = "de"
+    german_form = await flow.async_step_users()
+    german_sections = german_form["data_schema"]({})
+    assert german_sections[flow._section_titles[7]]["Namen eintragen"] == "Old"
+    assert german_sections[flow._section_titles[12]]["Namen eintragen"] == ""
+    hass.config.language = "en"
     assert "Last action on:" in flow._section_titles[7]
     assert "No action" in flow._section_titles[99]
     assert "ID 7" in form["description_placeholders"]["history"]
@@ -477,9 +484,9 @@ async def test_user_mapping_options_fetch_and_atomic_save(hass, parent):
     remove = manager.async_add_listener(listener)
     result = await flow.async_step_users(
         {
-            flow._section_titles[7]: {"ID 7": " Kai "},
-            flow._section_titles[12]: {"ID 12": "Guest"},
-            flow._section_titles[99]: {"ID 99": ""},
+            flow._section_titles[7]: {"Enter a name": " Kai "},
+            flow._section_titles[12]: {"Enter a name": "Guest"},
+            flow._section_titles[99]: {"Enter a name": ""},
         }
     )
     assert result["step_id"] == "review"
@@ -515,7 +522,7 @@ async def test_user_mapping_options_offline_retry_and_no_ids(hass, parent):
     assert result["step_id"] == "fetch_failed"
     assert (await flow.async_step_fetch_failed())["menu_options"] == ["retry", "users"]
     assert (await flow.async_step_users())["data_schema"]({}) == {
-        flow._section_titles[7]: {"ID 7": "Existing"}
+        flow._section_titles[7]: {"Enter a name": "Existing"}
     }
     with patch.object(manager.client, "fetch", return_value=[]):
         progress = await flow.async_step_retry()

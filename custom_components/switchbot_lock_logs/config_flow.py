@@ -126,12 +126,18 @@ class HistoryWizard:
                 self._section_titles[user_id] = f"ID {user_id} · {label}"
         if not self._user_ids:
             return await self.async_step_no_users()
+        name_label = (
+            "Namen eintragen" if self.hass.config.language == "de" else "Enter a name"
+        )
         errors = {}
         if user_input is not None:
             changes = {}
             for user_id in self._user_ids:
                 values = user_input.get(self._section_titles[user_id], user_input)
-                name = values.get(f"ID {user_id}", stored.get(str(user_id), ""))
+                name = values.get(
+                    name_label,
+                    values.get(f"ID {user_id}", stored.get(str(user_id), "")),
+                )
                 if not isinstance(name, str) or len(name) > 100:
                     errors["base"] = "invalid_name"
                     break
@@ -157,12 +163,12 @@ class HistoryWizard:
                         vol.Schema(
                             {
                                 vol.Optional(
-                                    f"ID {user_id}",
+                                    name_label,
                                     default=(user_input or {})
                                     .get(
                                         self._section_titles[user_id], user_input or {}
                                     )
-                                    .get(f"ID {user_id}", stored.get(str(user_id), "")),
+                                    .get(name_label, stored.get(str(user_id), "")),
                                 ): TextSelector()
                             }
                         ),
