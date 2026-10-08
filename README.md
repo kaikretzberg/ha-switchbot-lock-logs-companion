@@ -91,6 +91,9 @@ JavaScript resource is needed.
 
 Archived fingerprint accesses are imported automatically into the Last access
 entity's and companion device's **Activity** with their original dates and times.
+Messages are short (e.g. “Kai unlocked”); HA displays the date and time separately.
+Last access retains the confirmed person during connection failures. Its
+`lock_available` and `last_sync_success` attributes expose connection and read status.
 New accesses, including gaps found during polling or the nightly sync, are appended.
 Delivered accesses are remembered across restarts; unlock/unlatch pairs appear once.
 Names are resolved when viewing Activity, so later name changes also apply there.
@@ -227,7 +230,10 @@ Nutze ausschließlich die Standardkarten **Entitäten**, **Markdown** oder
 
 Archivierte Fingerabdruck-Zutritte werden automatisch mit ihrem ursprünglichen
 Datum und ihrer Uhrzeit in die **Aktivität** der Entität „Letzter Zutritt“ und des
-zugehörigen Geräts importiert. Neue Zutritte und beim Intervallabruf oder nächtlichen
+zugehörigen Geräts importiert. Die Meldung lautet kurz „Kai hat geöffnet“; Datum
+und Uhrzeit zeigt HA daneben. „Letzter Zutritt“ bleibt bei Verbindungsproblemen
+sichtbar. Die Attribute `lock_available` und `last_sync_success` zeigen den
+Verbindungs- und Abrufstatus separat. Neue Zutritte und beim Intervallabruf oder nächtlichen
 Abgleich gefundene Lücken werden ergänzt. Der Importstand bleibt über Neustarts
 hinweg gespeichert; Entriegelung und zugehörige Riegelöffnung erscheinen einmal.
 Spätere Namensänderungen gelten auch für die Aktivitätsansicht. Recorder und Logbook

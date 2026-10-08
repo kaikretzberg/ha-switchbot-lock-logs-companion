@@ -842,9 +842,7 @@ async def test_automatic_native_card_language(hass, parent, language):
         data={**unlock.as_dict({"10": "Kai"}), "lock_name": "Front door"}
     )
     message = descriptions["switchbot_lock_logs_access"](event)["message"]
-    assert (
-        "per Fingerabdruck" if language == "de" else "with a fingerprint"
-    ) in message
+    assert message == ("Kai hat geöffnet" if language == "de" else "Kai unlocked")
     action = LogSensor(manager, "last_action", parent.device)
     assert action.native_value == "unlock"
     assert action.device_class == "enum"
@@ -1060,4 +1058,28 @@ async def test_activity_import_is_stored_in_real_recorder(hass, parent):
     assert len(rows) == 1
     assert rows[0]["entity_id"] == manager.access_entity_id
     assert "Kai" in rows[0]["message"]
+    await manager.async_shutdown()
+
+
+async def test_confirmed_last_access_survives_failed_reads_and_offline_lock(
+    hass, parent
+):
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+
+    _, manager = await setup_coordinator(hass, parent)
+    await manager.store.set_user(parent.device.id, 10, "Kai")
+    unlock = parse_response(
+        bytes.fromhex("016ac673ec00020f007b030a000000"), parent.device.id, "lock_pro"
+    )
+    manager.async_set_updated_data([unlock])
+    sensor = LogSensor(manager, "last_access", parent.device)
+    sensor.hass = hass
+    manager.async_set_update_error(UpdateFailed("Bluetooth timeout"))
+    hass.states.async_set(parent.entity.entity_id, "unavailable")
+    assert sensor.available
+    assert sensor.native_value == "Kai"
+    assert sensor.extra_state_attributes["lock_available"] is False
+    assert sensor.extra_state_attributes["last_sync_success"] is False
+    manager.async_set_updated_data([])
+    assert not sensor.available  # No confirmed access to retain.
     await manager.async_shutdown()

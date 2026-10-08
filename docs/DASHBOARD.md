@@ -26,8 +26,7 @@ Die Vorlage folgt der HA-Instanzsprache (Deutsch oder Englisch).
 Alternativ stehen feste [deutsche](dashboard-de.yaml) und [englische](dashboard-en.yaml) Vorlagen bereit.
 
 Archivierte und neue Zutritte erscheinen automatisch unter **Aktivität** auf der
-Geräteseite des Log-Companions, z. B. „Kai hat das Schloss per Fingerabdruck
-entriegelt · 08.10.2026 09:20:00“. Im Dashboard ist dafür die Standardkarte
+Geräteseite des Log-Companions, z. B. „Kai hat geöffnet“. Im Dashboard ist dafür die Standardkarte
 **Aktivität** verfügbar: [activity.yaml](activity.yaml). Recorder und Logbuch
 müssen aktiviert sein und die Entität sowie diese Ereignisse aufzeichnen.
 Historische Zutritte werden mit ihrer ursprünglichen Uhrzeit einmalig übernommen.

@@ -16,5 +16,5 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/kaikretzberg/ha-switchbot-lock-logs-companion/issues",
-  "version": "2.0.2"
+  "version": "2.0.3"
 }

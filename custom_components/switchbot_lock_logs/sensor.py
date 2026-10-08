@@ -73,6 +73,10 @@ class LogSensor(CoordinatorEntity[LogsCoordinator], SensorEntity):
 
     @property
     def available(self) -> bool:
+        if self.key == "last_access" and fingerprint_accesses(
+            self.coordinator.data or []
+        ):
+            return True
         return super().available and target_available(
             self.hass, self.coordinator.target
         )
@@ -128,6 +132,10 @@ class LogSensor(CoordinatorEntity[LogsCoordinator], SensorEntity):
             return {
                 "switchbot_access_history": True,
                 "language": self.coordinator.hass.config.language,
+                "lock_available": target_available(
+                    self.coordinator.hass, self.coordinator.target
+                ),
+                "last_sync_success": self.coordinator.last_update_success,
                 "access_count": len(records),
                 "sync_pending": self.coordinator.sync_pending,
                 "accesses": [r.as_dict(users) for r in records[:100]],

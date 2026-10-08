@@ -3,7 +3,6 @@
 from typing import Any
 
 from homeassistant.core import callback
-from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 
@@ -13,7 +12,6 @@ def async_describe_events(hass: Any, async_describe_event: Any) -> None:
     @callback
     def describe(event: Any) -> dict[str, Any]:
         data = event.data
-        time = dt_util.as_local(dt_util.utc_from_timestamp(data["timestamp"]))
         store = hass.data.get(DOMAIN, {}).get("store")
         users = store.users(data.get("lock_device_id", "")) if store else {}
         name = (
@@ -22,9 +20,9 @@ def async_describe_events(hass: Any, async_describe_event: Any) -> None:
             else data.get("user_name") or f"ID {data['user_id']}"
         )
         message = (
-            f"{name} hat das Schloss per Fingerabdruck entriegelt · {time:%d.%m.%Y %H:%M:%S}"
+            f"{name} hat geöffnet"
             if hass.config.language == "de"
-            else f"{name} unlocked with a fingerprint · {time:%d.%m.%Y %H:%M:%S}"
+            else f"{name} unlocked"
         )
         return {
             "name": data["lock_name"],

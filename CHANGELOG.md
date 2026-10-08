@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.3 — 2026-10-08
+
+- Short Activity messages without repeating the native date and time.
+- Keep the confirmed Last access visible during Bluetooth outages or failed reads.
+- Expose lock availability and synchronization status separately on Last access.
+
 ## 2.0.2 — 2026-10-08
 
 - Import archived fingerprint accesses into native Activity with original timestamps.
