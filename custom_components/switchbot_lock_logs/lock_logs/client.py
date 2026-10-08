@@ -7,6 +7,7 @@ No class/instance patching, new device or connection, or copied cipher code.
 from __future__ import annotations
 
 import asyncio
+import logging
 from dataclasses import dataclass
 from importlib.metadata import version
 from typing import Any
@@ -21,6 +22,7 @@ from .parser import ProtocolError, parse_response
 
 BASE_TIME_COMMAND = "57001401"
 READ_COMMAND = "57001405"
+_LOGGER = logging.getLogger(__name__)
 
 
 class DeviceUnavailable(RuntimeError):
@@ -156,6 +158,7 @@ class LockLogsClient:
             "_commandkey",
             "_send_command_locked_with_retry",
             "_increment_gcm_iv",
+            "_execute_forced_disconnect",
         )
         if not isinstance(
             getattr(device, "_operation_lock", None), asyncio.Lock
@@ -165,27 +168,41 @@ class LockLogsClient:
             )
         async with asyncio.timeout(180):
             async with device._operation_lock:
-                status = await self._send_locked(
-                    device, BASE_TIME_COMMAND + base_time.to_bytes(4, "big").hex()
-                )
-                if not status or status[0] not in (1, 6):
-                    raise ProtocolError("Lock rejected setting the history cursor")
-                records = []
-                seen: set[str] = set()
-                for _ in range(max_entries):
-                    record = parse_response(
-                        await self._send_locked(device, READ_COMMAND),
-                        self.target.device_id,
-                        self.target.model,
+                try:
+                    status = await self._send_locked(
+                        device, BASE_TIME_COMMAND + base_time.to_bytes(4, "big").hex()
                     )
-                    if record is None:
-                        break
-                    if record.timestamp >= base_time and record.raw not in seen:
-                        seen.add(record.raw)
-                        records.append(record)
-                return sorted(
-                    records, key=lambda log: (log.timestamp, log.index), reverse=True
-                )
+                    if not status or status[0] not in (1, 6):
+                        raise ProtocolError("Lock rejected setting the history cursor")
+                    records = []
+                    seen: set[str] = set()
+                    for _ in range(max_entries):
+                        record = parse_response(
+                            await self._send_locked(device, READ_COMMAND),
+                            self.target.device_id,
+                            self.target.model,
+                        )
+                        if record is None:
+                            break
+                        if record.timestamp >= base_time and record.raw not in seen:
+                            seen.add(record.raw)
+                            records.append(record)
+                    return sorted(
+                        records,
+                        key=lambda log: (log.timestamp, log.index),
+                        reverse=True,
+                    )
+                finally:
+                    # Keep the shared operation lock until disconnect completes.
+                    # Upstream resets the timer, connection and cipher together.
+                    try:
+                        async with asyncio.timeout(10):
+                            await device._execute_forced_disconnect()
+                    except Exception:
+                        _LOGGER.warning(
+                            "Failed to release SwitchBot history connection",
+                            exc_info=True,
+                        )
 
     @staticmethod
     async def _send_locked(device: Any, key: str) -> bytes:

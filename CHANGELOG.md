@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.5 — 2026-10-08
+
+- Remove periodic polling and its options; reconcile up to 100 raw records nightly at 02:00 HA local time. Keep immediate unlock-triggered reads and retries.
+- Release the shared Bluetooth connection and reset encryption state after history retrieval, including read errors and cancellation.
+- Add native diagnostic downloads with the full raw archive and Activity delivery records; omit assigned names and account/encryption secrets.
+- Explain the distinction between native sensor state changes and imported access events in Activity.
+
 ## 2.0.4 — 2026-10-08
 
 - Show only fingerprint openings in sensors and fresh log responses; retain all raw records in the separate archive.

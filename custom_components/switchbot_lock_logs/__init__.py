@@ -14,7 +14,7 @@ from homeassistant.helpers.event import (
 from homeassistant.helpers.start import async_at_start
 
 from .access import fingerprint_accesses
-from .const import DEFAULT_INTERVAL, DEFAULT_MAX_ENTRIES, DOMAIN
+from .const import DEFAULT_MAX_ENTRIES, DOMAIN
 from .coordinator import LogsCoordinator
 from .lock_logs.client import resolve_target
 from .storage import CompanionStore
@@ -143,7 +143,7 @@ def register_services(hass: Any) -> None:
 
 
 async def async_setup_entry(hass: Any, entry: Any) -> bool:
-    """Create entities even while the parent is unavailable, then poll quietly."""
+    """Restore entities, refresh once, and register unlock and nightly triggers."""
     target = resolve_target(hass, entry.data["device_id"])
     if target is None:
         from homeassistant.exceptions import ConfigEntryNotReady
@@ -156,7 +156,6 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
         entry,
         target,
         store,
-        entry.options.get("poll_interval", DEFAULT_INTERVAL),
     )
     # Ordinary refresh, not first_refresh: an offline lock must not prevent setup.
     initial = hass.data[DOMAIN].get("setup_history", {}).pop(target.device_id, None)
@@ -178,7 +177,7 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
         )
     )
     entry.async_on_unload(
-        async_track_time_change(hass, manager.nightly_sync, hour=3, minute=0, second=0)
+        async_track_time_change(hass, manager.nightly_sync, hour=2, minute=0, second=0)
     )
     return True
 

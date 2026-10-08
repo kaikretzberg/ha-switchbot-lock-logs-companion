@@ -112,7 +112,10 @@ async def test_actual_241_encryption_and_atomicity(hass, parent, mode):
         return b"\x01\x01" + header + encrypted_body
 
     target = discover_locks(hass)[parent.device.id]
-    with patch.object(lock, "_send_command_locked_with_retry", side_effect=exchange):
+    with (
+        patch.object(lock, "_send_command_locked_with_retry", side_effect=exchange),
+        patch.object(lock, "_execute_forced_disconnect"),
+    ):
         task = asyncio.create_task(LockLogsClient(hass, target).fetch(1234, 3))
         await asyncio.wait_for(first_read.wait(), 2)
         ordinary_command = asyncio.create_task(lock._send_command("570f4f8101"))
@@ -262,3 +265,55 @@ async def test_lock_pro_fetch_deduplicates_only_identical_records(hass, parent):
     assert len(logs) == 2
     assert {log.as_dict({})["action_name"] for log in logs} == {"unlock", "unlatch"}
     assert all(log.user_id == 10 for log in logs)
+
+
+@pytest.mark.parametrize("outcome", ["success", "error", "cancel"])
+async def test_history_disconnects_under_operation_lock(hass, parent, outcome):
+    """Release the actual shared library connection and cipher on every exit."""
+    from types import SimpleNamespace
+
+    lock = parent.lock
+    lock._iv = b"\x01" * 16
+    lock._cipher = object()
+    lock._encryption_mode = AESMode.CTR
+    disconnect = AsyncMock()
+    lock._client = SimpleNamespace(disconnect=disconnect)
+    lock._disconnect_timer = asyncio.get_running_loop().call_later(60, lambda: None)
+    read_started = asyncio.Event()
+
+    async def send(device, key):
+        assert lock._operation_lock.locked()
+        if key.startswith("57001401"):
+            return b"\x01"
+        if outcome == "error":
+            raise ProtocolError("read failed")
+        if outcome == "cancel":
+            read_started.set()
+            await asyncio.Future()
+        return b"\x01" + bytes(14)
+
+    async def released():
+        assert lock._operation_lock.locked()
+        assert lock._connect_lock.locked()
+
+    disconnect.side_effect = released
+    client = LockLogsClient(hass, discover_locks(hass)[parent.device.id])
+    with patch.object(client, "_send_locked", side_effect=send):
+        if outcome == "cancel":
+            task = asyncio.create_task(client.fetch())
+            await asyncio.wait_for(read_started.wait(), 2)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+        elif outcome == "error":
+            with pytest.raises(ProtocolError):
+                await client.fetch()
+        else:
+            assert await client.fetch() == []
+    disconnect.assert_awaited_once()
+    assert lock._disconnect_timer is None
+    assert lock._client is None
+    assert lock._iv is None
+    assert lock._cipher is None
+    assert lock._encryption_mode is None
+    assert not lock._operation_lock.locked()

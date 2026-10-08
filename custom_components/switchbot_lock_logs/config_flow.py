@@ -17,7 +17,7 @@ from homeassistant.helpers.selector import (
 from homeassistant.util import dt as dt_util
 
 from .access import fingerprint_accesses
-from .const import DEFAULT_INTERVAL, DOMAIN
+from .const import DOMAIN
 from .coordinator import LogsCoordinator
 from .lock_logs.client import discover_locks
 from .lock_logs.models import LogEntry
@@ -274,7 +274,7 @@ class LockLogsConfigFlow(HistoryWizard, ConfigFlow, domain=DOMAIN):
                     await store.load()
                 await store.migrate_device(device_id, locks[device_id].address)
                 self._wizard_manager = LogsCoordinator(
-                    self.hass, None, locks[device_id], store, DEFAULT_INTERVAL
+                    self.hass, None, locks[device_id], store
                 )
                 return await self.async_step_fetch_users()
         return self.async_show_form(
@@ -328,30 +328,14 @@ class LockLogsOptionsFlow(HistoryWizard, OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        return self.async_show_menu(
-            step_id="init", menu_options=["fetch_users", "polling"]
-        )
-
-    async def async_step_polling(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        if user_input is not None:
-            return self.async_create_entry(
-                title="", data={**self.config_entry.options, **user_input}
-            )
-        return self.async_show_form(
-            step_id="polling",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        "poll_interval",
-                        default=self.config_entry.options.get(
-                            "poll_interval", DEFAULT_INTERVAL
-                        ),
-                    ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440)),
-                }
-            ),
-        )
+        return self.async_show_menu(step_id="init", menu_options=["fetch_users"])
 
     async def _finish_wizard(self) -> ConfigFlowResult:
-        return self.async_create_entry(title="", data=dict(self.config_entry.options))
+        return self.async_create_entry(
+            title="",
+            data={
+                key: value
+                for key, value in self.config_entry.options.items()
+                if key != "poll_interval"
+            },
+        )

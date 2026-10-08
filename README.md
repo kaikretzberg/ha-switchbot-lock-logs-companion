@@ -42,7 +42,7 @@ The integration does not require a SwitchBot cloud account or API token.
 
 SwitchBot manages names in its app; the lock history provides IDs. Your name
 mappings are stored locally. Later, use **Configure** to download history again,
-rename IDs or change the periodic check interval. A blank name removes a mapping.
+rename IDs. A blank name removes a mapping.
 
 For manual installation, download the GitHub release's **Source code (zip)**,
 extract it and copy `custom_components/switchbot_lock_logs` to
@@ -68,8 +68,9 @@ beyond the 100 entries exposed in the entity.
 
 When HA detects an unlock, the integration starts a small Bluetooth history
 request immediately and retries delayed records. No separate automation is
-required. At **03:00 local time** it makes up to 100 history read requests;
-periodic one-record checks default to every **15 minutes**. The lock's response
+required. At **02:00 local time** it makes up to 100 history read requests.
+There is no periodic polling interval. The Bluetooth connection is released
+after each history request, including failures and between retries. The lock's response
 and Bluetooth connection determine when a name becomes available.
 New downloads merge into the archive; duplicates and empty responses do not
 remove older records. Unlock and matching unlatch records appear once in the
@@ -94,7 +95,7 @@ entity's and companion device's **Activity** with their original dates and times
 Messages are short (e.g. “Kai unlocked”); HA displays the date and time separately.
 Last access retains the confirmed person during connection failures. Its
 `lock_available` and `last_sync_success` attributes expose connection and read status.
-New accesses, including gaps found during polling or the nightly sync, are appended.
+New accesses, including gaps found during the nightly sync, are appended.
 Delivered accesses are remembered across restarts; unlock/unlatch pairs appear once.
 Names are resolved when viewing Activity, so later name changes also apply there.
 Recorder and Logbook must be enabled and include the entity and events. Activity
@@ -180,7 +181,7 @@ Ein SwitchBot-Cloudkonto oder API-Token ist für diese Integration nicht nötig.
 
 Die SwitchBot-App verwaltet Namen; das Schlossprotokoll liefert IDs. Deine
 Zuordnungen werden lokal gespeichert. Unter **Konfigurieren** kannst du später
-erneut die Historie abrufen, Namen ändern oder das Abrufintervall einstellen.
+erneut die Historie abrufen oder Namen ändern.
 Ein leeres Namensfeld entfernt die Zuordnung.
 
 Für eine manuelle Installation lade **Source code (zip)** des GitHub-Releases
@@ -207,8 +208,9 @@ abgerufen). Das Archiv wächst über die 100 Einträge im Attribut hinaus weiter
 
 Sobald HA eine Entriegelung erkennt, startet ein kleiner Bluetooth-Abruf.
 Verzögert verfügbare Einträge werden erneut abgefragt. Eine eigene Automation
-brauchst du dafür nicht. Um **03:00 Uhr** erfolgen bis zu 100 Leseabfragen;
-zusätzlich wird standardmäßig alle **15 Minuten** ein Eintrag abgefragt.
+brauchst du dafür nicht. Um **02:00 Uhr** erfolgen bis zu 100 Leseabfragen.
+Einen Intervallabruf gibt es nicht mehr. Nach jedem Historienabruf wird die
+Bluetooth-Verbindung freigegeben, auch bei Fehlern und zwischen Wiederholungen.
 Wie schnell der Name erscheint, hängt vom Schloss und der Bluetooth-Verbindung ab.
 Neue Abrufe ergänzen das Archiv. Duplikate und leere Antworten löschen keine
 älteren Einträge. Entriegelung und zugehörige Riegelöffnung werden in der
@@ -233,7 +235,7 @@ Datum und ihrer Uhrzeit in die **Aktivität** der Entität „Letzter Zutritt“
 zugehörigen Geräts importiert. Die Meldung lautet kurz „Kai hat geöffnet“; Datum
 und Uhrzeit zeigt HA daneben. „Letzter Zutritt“ bleibt bei Verbindungsproblemen
 sichtbar. Die Attribute `lock_available` und `last_sync_success` zeigen den
-Verbindungs- und Abrufstatus separat. Neue Zutritte und beim Intervallabruf oder nächtlichen
+Verbindungs- und Abrufstatus separat. Neue Zutritte und beim nächtlichen
 Abgleich gefundene Lücken werden ergänzt. Der Importstand bleibt über Neustarts
 hinweg gespeichert; Entriegelung und zugehörige Riegelöffnung erscheinen einmal.
 Spätere Namensänderungen gelten auch für die Aktivitätsansicht. Recorder und Logbook
@@ -292,3 +294,31 @@ Probleme bitte unter [GitHub Issues](https://github.com/kaikretzberg/ha-switchbo
 
 MIT. Original notices are retained in [LICENSE](LICENSE) and
 [PySwitchbot license](docs/PYSWITCHBOT_LICENSE).
+
+### Activity entries and diagnostic export / Aktivität und Diagnose-Export
+
+A plain name in Activity is a native sensor state change. “Name unlocked” is
+an actual archived access event. HA can display both in the same entity view;
+this does not mean that the archive contains a duplicate. Two access events
+with different timestamps may be separate openings. Compare them with the
+SwitchBot app before changing their interpretation.
+
+Download diagnostics under **Settings → Devices & services → SwitchBot Lock
+Logs → integration entry menu → Download diagnostics**. The JSON includes the
+complete raw archive, timestamps, IDs, sync status and delivered Activity records.
+Names are replaced by user IDs; account credentials and encryption keys are
+not included. The export does not make a Bluetooth request. If the device has
+been offline, first fetch fresh history under Configure.
+
+Ein einzelner Name in „Aktivität“ ist eine native Sensoränderung. „Name hat
+geöffnet“ ist ein Ereignis aus dem Schlossprotokoll. HA kann beide in derselben
+Entitätsansicht anzeigen; das bedeutet keinen doppelten Archiveintrag.
+Zwei Öffnungsereignisse mit verschiedenen Zeiten können verschiedene
+Entriegelungen sein. Vergleiche sie mit dem Ereignisprotokoll der SwitchBot-App.
+
+Unter **Einstellungen → Geräte & Dienste → SwitchBot Lock Logs → Menü des
+Integrationseintrags → Diagnosedaten herunterladen** kannst du das vollständige
+Roharchiv mit Zeitstempeln, IDs, Abrufstatus und importierten Aktivitätseinträgen
+als JSON exportieren. Namen werden durch Benutzer-IDs ersetzt; Zugangsdaten und
+Bluetooth-Schlüssel sind nicht enthalten. Der Export startet keinen Bluetooth-
+Abruf. Bei veralteter Historie zuerst unter Konfigurieren erneut abrufen.

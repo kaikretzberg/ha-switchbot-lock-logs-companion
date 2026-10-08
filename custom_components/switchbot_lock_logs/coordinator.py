@@ -1,11 +1,10 @@
-"""Conservative polling and serialized manual history retrieval."""
+"""Unlock-triggered, nightly and serialized manual history retrieval."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
 from bisect import bisect_left, insort
-from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import callback
@@ -23,15 +22,13 @@ _LOGGER = logging.getLogger(__name__)
 class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
     """Keep failures visible; cached history is never returned as a successful read."""
 
-    def __init__(
-        self, hass: Any, entry: Any, target: Any, store: Any, interval: int
-    ) -> None:
+    def __init__(self, hass: Any, entry: Any, target: Any, store: Any) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name="SwitchBot Lock Logs",
             config_entry=entry,
-            update_interval=timedelta(minutes=interval),
+            update_interval=None,
         )
         self.target = target
         self.store = store

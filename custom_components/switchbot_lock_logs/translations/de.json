@@ -56,14 +56,7 @@
       "init": {
         "title": "Schlossprotokoll verwalten",
         "menu_options": {
-          "fetch_users": "Assistent: aktuellen Verlauf und Benutzer einrichten",
-          "polling": "Abrufintervall ändern"
-        }
-      },
-      "polling": {
-        "title": "Abrufintervall",
-        "data": {
-          "poll_interval": "Abrufintervall (Minuten, 5–1440)"
+          "fetch_users": "Assistent: aktuellen Verlauf und Benutzer einrichten"
         }
       },
       "users": {

@@ -154,14 +154,7 @@
       "init": {
         "title": "Manage lock history",
         "menu_options": {
-          "fetch_users": "Wizard: download history and set up users",
-          "polling": "Change polling interval"
-        }
-      },
-      "polling": {
-        "title": "Polling interval",
-        "data": {
-          "poll_interval": "Polling interval (minutes, 5–1440)"
+          "fetch_users": "Wizard: download history and set up users"
         }
       },
       "users": {

@@ -51,7 +51,7 @@ erscheinen als „User 10“ usw.
 
 Der schnelle Bluetooth-Abruf startet bei einer Entriegelung des offiziellen
 SwitchBot-Lock-Sensors. Verzögerte Datensätze werden begrenzt erneut abgefragt.
-Nachts um 03:00 Uhr werden bis zu 100 Datensätze abgeglichen. Das vollständige
+Nachts um 02:00 Uhr werden bis zu 100 Datensätze abgeglichen. Das vollständige
 Archiv wird dauerhaft ergänzt; es wird nicht durch die 100 Einträge im
 Entitätsattribut begrenzt. `switchbot_lock_logs.get_stored_lock_logs` gibt das
 vollständige Roharchiv zurück. Große History-Attribute werden nicht bei jedem

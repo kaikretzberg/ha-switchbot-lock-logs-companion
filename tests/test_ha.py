@@ -101,12 +101,7 @@ async def test_options_flow(hass, parent):
     flow.hass = hass
     flow.handler = entry.entry_id
     menu = await flow.async_step_init()
-    assert menu["menu_options"] == ["fetch_users", "polling"]
-    form = await flow.async_step_polling()
-    assert form["data_schema"]({}) == {"poll_interval": 15}
-    assert (await flow.async_step_polling({"poll_interval": 30}))["data"] == {
-        "poll_interval": 30
-    }
+    assert menu["menu_options"] == ["fetch_users"]
 
 
 async def test_real_store_roundtrip_and_delete(hass, parent):
@@ -176,7 +171,7 @@ async def setup_coordinator(hass, parent):
     store = hass.data[DOMAIN]["store"]
     await store.migrate_device(parent.device.id, "AA:BB:CC:DD:EE:FF")
     manager = LogsCoordinator(
-        hass, entry, discover_locks(hass)[parent.device.id], store, 15
+        hass, entry, discover_locks(hass)[parent.device.id], store
     )
     hass.data[DOMAIN]["coordinators"][entry.entry_id] = manager
     return entry, manager
@@ -286,14 +281,26 @@ async def test_sensors_timestamp_and_empty(hass, parent):
 
 
 async def test_offline_entry_setup_and_unload(hass, parent):
+    from homeassistant.helpers.event import async_track_time_change
+
     await async_setup(hass, {})
     entry = make_entry(DOMAIN, {"device_id": parent.device.id})
     hass.config_entries._entries[entry.entry_id] = entry
     hass.states.async_set(parent.entity.entity_id, "unavailable")
-    with patch.object(
-        hass.config_entries, "async_forward_entry_setups", new_callable=AsyncMock
+    with (
+        patch.object(
+            hass.config_entries, "async_forward_entry_setups", new_callable=AsyncMock
+        ),
+        patch(
+            "custom_components.switchbot_lock_logs.async_track_time_change",
+            wraps=async_track_time_change,
+        ) as schedule,
     ):
         assert await async_setup_entry(hass, entry)
+    schedule.assert_called_once_with(
+        hass, entry.runtime_data.nightly_sync, hour=2, minute=0, second=0
+    )
+    assert entry.runtime_data.update_interval is None
     assert not entry.runtime_data.last_update_success
     with patch.object(
         hass.config_entries,
@@ -497,7 +504,7 @@ async def test_user_mapping_options_fetch_and_atomic_save(hass, parent):
     assert result["step_id"] == "review"
     result = await flow.async_step_review({})
     assert result["type"] == "create_entry"
-    assert result["data"] == {"poll_interval": 30}
+    assert result["data"] == {}
     assert manager.store.users(parent.device.id) == {"7": "Kai", "12": "Guest"}
     listener.assert_called_once()
     persisted = CompanionStore(hass)
@@ -917,7 +924,7 @@ async def test_activity_backfill_original_times_restart_and_live_separation(
         # A normal restart restores the checkpoint, even if Recorder purged events.
         store = CompanionStore(hass)
         await store.load()
-        restored = LogsCoordinator(hass, entry, manager.target, store, 15)
+        restored = LogsCoordinator(hass, entry, manager.target, store)
         restored.access_entity_id = manager.access_entity_id
         with patch.object(restored, "_activity_recorder", return_value=recorder):
             await restored.import_activity()
@@ -1140,4 +1147,28 @@ async def test_fresh_logs_and_visible_sensors_hide_unknown_and_lock_events(
         == 1
     )
     assert len(manager.store.history(parent.device.id)) == 3
+    await manager.async_shutdown()
+
+
+async def test_sync_has_no_periodic_timer_and_diagnostics_preserve_raws(hass, parent):
+    from custom_components.switchbot_lock_logs.diagnostics import (
+        async_get_config_entry_diagnostics,
+    )
+
+    entry, manager = await setup_coordinator(hass, parent)
+    assert manager.update_interval is None
+    await manager.store.set_user(parent.device.id, 7, "Private name")
+    record = parse_response(OPEN_RECORD, parent.device.id, "lock_pro")
+    await manager.store.append_history(parent.device.id, [record])
+    report = await async_get_config_entry_diagnostics(hass, entry)
+    assert report["logs"][0]["raw"] == record.raw
+    assert report["logs"][0]["user_name"] == "User 7"
+    assert report["mapped_user_ids"] == ["7"]
+    assert report["schedule"] == {
+        "nightly_hour": 2,
+        "max_entries": 100,
+        "periodic_polling": False,
+    }
+    assert "Private name" not in str(report)
+    assert "encryption_key" not in str(report)
     await manager.async_shutdown()
