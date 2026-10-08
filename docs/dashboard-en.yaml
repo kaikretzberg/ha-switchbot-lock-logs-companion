@@ -1,0 +1,21 @@
+# Standard Home Assistant Markdown card. Replace the entity ID below.
+type: markdown
+title: Who unlocked?
+entity_id: sensor.YOUR_LOCK_LAST_ACCESS
+content: |
+  {% set entity = config.entity_id %}
+  {% set history = state_attr(entity, 'history') or [] %}
+  {% if not has_value(entity) %}
+  Lock logs are currently unavailable. Stored accesses appear below.
+  {% endif %}
+  {% if state_attr(entity, 'sync_pending') %}
+  Fetching the new access …
+  {% endif %}
+  {% for entry in history[:30] %}
+  **{{ entry.name | e }}** · unlocked
+  <br>{{ entry.time | e }}
+
+  ---
+  {% else %}
+  No fingerprint accesses stored yet.
+  {% endfor %}

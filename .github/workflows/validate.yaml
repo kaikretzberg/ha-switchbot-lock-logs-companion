@@ -1,0 +1,36 @@
+name: Validate companion
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - uses: astral-sh/setup-uv@v7
+      - run: uv venv .venv
+      - run: uv pip install --python .venv/bin/python -r requirements-dev.txt
+      - run: .venv/bin/python scripts/install_test_dependencies.py
+      - run: .venv/bin/ruff check .
+      - run: .venv/bin/ruff format --check .
+      - run: .venv/bin/mypy
+      - run: .venv/bin/python -m pytest -q
+      - run: .venv/bin/python -m compileall -q custom_components/switchbot_lock_logs
+      - run: .venv/bin/python scripts/build_release.py
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: home-assistant/actions/hassfest@master
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hacs/action@main
+        with:
+          category: integration

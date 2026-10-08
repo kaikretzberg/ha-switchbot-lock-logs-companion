@@ -1,0 +1,7 @@
+{
+  "provenance": "Synthetic bytes constructed from fork e1d8fa7's eight-byte header and original integration's documented payload pattern. No captured hardware packets exist in those repositories.",
+  "unlock_keypad_user_7": "016553f10002010164590307010000",
+  "lock_manual": "016553f11003020064000000000000",
+  "empty": "010000000000000000000000000000",
+  "low_battery_unlock": "066553f1000206010a590107010000"
+}

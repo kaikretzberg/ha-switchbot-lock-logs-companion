@@ -1,0 +1,31 @@
+# Replace this entity ID with your Log Count sensor (in both places).
+type: markdown
+title: Event history
+entity_id: sensor.YOUR_LOCK_LOG_COUNT
+content: |
+  {% set entity = config.entity_id %}
+  {% set logs = state_attr(entity, 'logs') or [] %}
+  {% set actions = {'lock': 'Locked', 'unlatch': 'Unlatched', 'unlock': 'Unlocked', 'jammed': 'Jammed', 'unlock_failed': 'Unlock failed', 'lock_failed': 'Lock failed'} %}
+  {% set sources = {'app': 'App control', 'keypad': 'Keypad', 'manual': 'Manual', 'auto_lock': 'Auto lock', 'nfc': 'NFC', 'remote': 'Remote', 'fingerprint': 'Fingerprint'} %}
+  {% if not has_value(entity) %}
+  Lock history is unavailable: {{ states(entity) }}
+  {% elif not logs %}
+  No events fetched yet.
+  {% else %}
+  {% set day = namespace(value='') %}
+  {% for log in logs %}
+  {% set date = log.timestamp | timestamp_custom('%d.%m.%Y', true) %}
+  {% if date != day.value %}
+  ## {{ date }}
+  {% set day.value = date %}
+  {% endif %}
+  <ha-icon icon="{{ 'mdi:lock' if log.action_name == 'lock' else 'mdi:lock-open' if log.action_name == 'unlock' else 'mdi:alert-circle-outline' }}"></ha-icon> **{{ actions.get(log.action_name, log.action_name) | e }}** · {{ log.timestamp | timestamp_custom('%H:%M', true) }}
+  <br>{{ (log.user_name or 'Unknown user') | e }} · {{ sources.get(log.source_name, log.source_name) | e }}
+  <small>Action {{ log.action }} · Source {{ log.source }} · Payload {{ log.payload | e }}</small>
+  {% if log.user_id is not none %}
+  <small>ID {{ log.user_id }}</small>
+  {% endif %}
+  
+  ---
+  {% endfor %}
+  {% endif %}

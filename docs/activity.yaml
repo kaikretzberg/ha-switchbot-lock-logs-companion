@@ -1,0 +1,6 @@
+# Standard Activity card. Replace with your Last access sensor.
+type: logbook
+title: Zutritte
+entities:
+  - sensor.YOUR_LOCK_LAST_ACCESS
+hours_to_show: 24

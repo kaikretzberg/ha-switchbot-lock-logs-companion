@@ -1,0 +1,74 @@
+# Services for the SwitchBot Lock Logs integration
+
+get_lock_logs:
+  fields:
+    device_id:
+      required: true
+      example: "abc123def456"
+      selector:
+        device:
+          integration: switchbot
+    max_entries:
+      required: false
+      default: 20
+      example: 50
+      selector:
+        number:
+          min: 1
+          max: 100
+          mode: box
+    base_time:
+      required: false
+      default: 0
+      example: 1704067200
+      selector:
+        number:
+          min: 0
+          mode: box
+
+set_lock_user_name:
+  fields:
+    device_id:
+      required: true
+      example: "abc123def456"
+      selector:
+        device:
+          integration: switchbot
+    user_id:
+      required: true
+      example: 10
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    name:
+      required: true
+      example: "Dad's Fingerprint"
+      selector:
+        text:
+
+delete_lock_user_name:
+  fields:
+    device_id:
+      required: true
+      example: "abc123def456"
+      selector:
+        device:
+          integration: switchbot
+    user_id:
+      required: true
+      example: 10
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+
+get_stored_lock_logs:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: switchbot

@@ -1,0 +1,206 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Dieses Schloss ist bereits eingerichtet.",
+      "no_locks_found": "Keine SwitchBot-Schlösser gefunden. Bitte zuerst die offizielle SwitchBot-Bluetooth-Integration einrichten.",
+      "not_loaded": "Die Integration ist nicht geladen. Bitte das Schlossprotokoll zuerst neu laden und dann erneut öffnen."
+    },
+    "error": {
+      "device_not_found": "Das gewählte Schloss wurde nicht gefunden.",
+      "unknown": "Ein unerwarteter Fehler ist aufgetreten.",
+      "invalid_name": "Namen dürfen maximal 100 Zeichen haben.",
+      "save_failed": "Namen konnten nicht gespeichert werden. Bitte erneut versuchen."
+    },
+    "step": {
+      "user": {
+        "title": "SwitchBot-Schloss wählen",
+        "description": "Wähle das Schloss der offiziellen SwitchBot-Bluetooth-Integration. Danach lädt der Assistent den aktuellen Verlauf und führt dich durch die Benutzerzuordnung.",
+        "data": {
+          "device_id": "Schloss"
+        }
+      },
+      "users": {
+        "title": "Benutzer benennen",
+        "description": "Folgende IDs wurden in den Logs gefunden. Trage unten für jede ID einen Namen ein.\n\nEine automatische Namenszuordnung ist nicht möglich: Die SwitchBot-App verwaltet die Namen; das Schlossprotokoll liefert nur Benutzer-IDs. Vergleiche die unten genannten Zeiten mit der iOS / Android App.\n\nSwitchBot-App Startseite → Lock auswählen → Ereignisprotokoll\n\n{count} unterschiedliche Ereignisse verfügbar. Die Zeiten werden in deiner Home-Assistant-Zeitzone angezeigt. Bereits gespeicherte IDs werden ebenfalls angeboten. Vorhandene Namen sind vorausgefüllt; ein leeres Feld entfernt die Zuordnung."
+      },
+      "fetch_failed": {
+        "title": "Verlauf konnte nicht abgerufen werden",
+        "description": "Prüfe, ob das Schloss erreichbar ist. Du kannst erneut versuchen oder gespeicherte Zuordnungen und den zuletzt verfügbaren Verlauf bearbeiten.",
+        "menu_options": {
+          "retry": "Erneut abrufen",
+          "users": "Verfügbare Benutzer bearbeiten"
+        }
+      },
+      "no_users": {
+        "title": "Keine Benutzer-IDs gefunden",
+        "description": "Im abgerufenen Verlauf gibt es keine erkannten Benutzer-IDs und keine gespeicherten Namen. Entriegle einmal mit deinem Fingerabdruck oder Keypad und rufe danach erneut ab. App-Ereignisse können ohne Benutzer-ID vorliegen.",
+        "menu_options": {
+          "retry": "Erneut abrufen",
+          "review": "Verlauf ansehen und abschließen"
+        }
+      },
+      "review": {
+        "title": "Verlauf prüfen und abschließen",
+        "description": "Die Benutzerzuordnungen sind gespeichert. Diese Historie konnten wir somit erstellen:\n\n**{status}**\n\n{count} Fingerabdruck-Zutritte verfügbar. Die neuesten 15 stehen unten.\n\n{events}\n\nDie Integration ist bereit. Der Sensor „Letzter Zutritt“ zeigt den letzten Namen. Zeitpunkt und die neuesten 100 Zutritte stehen in seinen Attributen. Neue Live-Zutritte erscheinen in „Aktivität“. Unter Konfigurieren kannst du später erneut die Historie abrufen und IDs benennen. Für das Dashboard nutze die Standardkarten Entitäten, Markdown oder Aktivität; Vorlagen stehen in docs/DASHBOARD.md."
+      }
+    },
+    "progress": {
+      "fetch_history": "Lade Historie von {device_name}. Das kann bis zu 3 Minuten dauern.\n\nBis zu 100 Leseabfragen werden einzeln über Bluetooth durchgeführt. Doppelte Einträge werden zusammengefasst. Bitte lasse dieses Fenster geöffnet."
+    },
+    "create_entry": {
+      "default": "Die Einrichtung ist abgeschlossen. Die Integration kann jetzt genutzt werden. Deine Benutzerzuordnungen sind gespeichert. Unter „Konfigurieren“ kannst du den Verlauf erneut abrufen und Namen bearbeiten."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Schlossprotokoll verwalten",
+        "menu_options": {
+          "fetch_users": "Assistent: aktuellen Verlauf und Benutzer einrichten",
+          "polling": "Abrufintervall ändern"
+        }
+      },
+      "polling": {
+        "title": "Abrufintervall",
+        "data": {
+          "poll_interval": "Abrufintervall (Minuten, 5–1440)"
+        }
+      },
+      "users": {
+        "title": "Benutzer benennen",
+        "description": "Folgende IDs wurden in den Logs gefunden. Trage unten für jede ID einen Namen ein.\n\nEine automatische Namenszuordnung ist nicht möglich: Die SwitchBot-App verwaltet die Namen; das Schlossprotokoll liefert nur Benutzer-IDs. Vergleiche die unten genannten Zeiten mit der iOS / Android App.\n\nSwitchBot-App Startseite → Lock auswählen → Ereignisprotokoll\n\n{count} unterschiedliche Ereignisse verfügbar. Die Zeiten werden in deiner Home-Assistant-Zeitzone angezeigt. Bereits gespeicherte IDs werden ebenfalls angeboten. Vorhandene Namen sind vorausgefüllt; ein leeres Feld entfernt die Zuordnung."
+      },
+      "fetch_failed": {
+        "title": "Verlauf konnte nicht abgerufen werden",
+        "description": "Prüfe, ob das Schloss erreichbar ist. Du kannst erneut versuchen oder gespeicherte Zuordnungen und den zuletzt verfügbaren Verlauf bearbeiten.",
+        "menu_options": {
+          "retry": "Erneut abrufen",
+          "users": "Verfügbare Benutzer bearbeiten"
+        }
+      },
+      "no_users": {
+        "title": "Keine Benutzer-IDs gefunden",
+        "description": "Im abgerufenen Verlauf gibt es keine erkannten Benutzer-IDs und keine gespeicherten Namen. Entriegle einmal mit deinem Fingerabdruck oder Keypad und rufe danach erneut ab. App-Ereignisse können ohne Benutzer-ID vorliegen.",
+        "menu_options": {
+          "retry": "Erneut abrufen",
+          "review": "Verlauf ansehen und abschließen"
+        }
+      },
+      "review": {
+        "title": "Verlauf prüfen und abschließen",
+        "description": "Die Benutzerzuordnungen sind gespeichert. Diese Historie konnten wir somit erstellen:\n\n**{status}**\n\n{count} Fingerabdruck-Zutritte verfügbar. Die neuesten 15 stehen unten.\n\n{events}\n\nDie Integration ist bereit. Der Sensor „Letzter Zutritt“ zeigt den letzten Namen. Zeitpunkt und die neuesten 100 Zutritte stehen in seinen Attributen. Neue Live-Zutritte erscheinen in „Aktivität“. Unter Konfigurieren kannst du später erneut die Historie abrufen und IDs benennen. Für das Dashboard nutze die Standardkarten Entitäten, Markdown oder Aktivität; Vorlagen stehen in docs/DASHBOARD.md."
+      }
+    },
+    "progress": {
+      "fetch_history": "Lade Historie von {device_name}. Das kann bis zu 3 Minuten dauern.\n\nBis zu 100 Leseabfragen werden einzeln über Bluetooth durchgeführt. Doppelte Einträge werden zusammengefasst. Bitte lasse dieses Fenster geöffnet."
+    },
+    "error": {
+      "invalid_name": "Namen dürfen maximal 100 Zeichen haben.",
+      "save_failed": "Namen konnten nicht gespeichert werden. Bitte erneut versuchen."
+    },
+    "abort": {
+      "not_loaded": "Die Integration ist nicht geladen. Bitte das Schlossprotokoll zuerst neu laden und dann erneut öffnen."
+    },
+    "create_entry": {
+      "default": "Die Einrichtung ist abgeschlossen. Die Integration kann jetzt genutzt werden. Deine Benutzerzuordnungen sind gespeichert. Unter „Konfigurieren“ kannst du den Verlauf erneut abrufen und Namen bearbeiten."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_activity": {
+        "name": "Letzte Aktivität"
+      },
+      "last_user": {
+        "name": "Letzter Benutzer"
+      },
+      "last_action": {
+        "name": "Letzte Aktion",
+        "state": {
+          "lock": "Verriegelt",
+          "unlock": "Entriegelt",
+          "unlatch": "Riegel geöffnet",
+          "jammed": "Blockiert",
+          "unlock_failed": "Entriegeln fehlgeschlagen",
+          "lock_failed": "Verriegeln fehlgeschlagen",
+          "unknown": "Unbekannte Aktion"
+        }
+      },
+      "log_count": {
+        "name": "Anzahl Protokolleinträge"
+      },
+      "last_access": {
+        "name": "Letzter Zutritt"
+      }
+    }
+  },
+  "services": {
+    "get_lock_logs": {
+      "name": "Schlossprotokoll abrufen",
+      "description": "Historie abrufen, Sensoren aktualisieren und das Ergebnis als Antwort zurückgeben.",
+      "fields": {
+        "device_id": {
+          "name": "Gerät",
+          "description": "Geräte-ID des offiziellen Schlosses."
+        },
+        "max_entries": {
+          "name": "Maximale Einträge",
+          "description": "1 bis 100 Einträge."
+        },
+        "base_time": {
+          "name": "Startzeit",
+          "description": "Unix-Zeitstempel (uint32), 0 für alle Einträge."
+        }
+      }
+    },
+    "set_lock_user_name": {
+      "name": "Benutzernamen zuordnen",
+      "description": "Eine Benutzer-ID dauerhaft einem Namen zuordnen.",
+      "fields": {
+        "device_id": {
+          "name": "Gerät",
+          "description": "Geräte-ID des Schlosses."
+        },
+        "user_id": {
+          "name": "Benutzer-ID",
+          "description": "ID aus dem Protokoll (0–255)."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Anzeigename für diese ID."
+        }
+      }
+    },
+    "delete_lock_user_name": {
+      "name": "Benutzerzuordnung löschen",
+      "description": "Eine gespeicherte Namenszuordnung entfernen.",
+      "fields": {
+        "device_id": {
+          "name": "Gerät",
+          "description": "Geräte-ID des Schlosses."
+        },
+        "user_id": {
+          "name": "Benutzer-ID",
+          "description": "Zu löschende ID (0–255)."
+        }
+      }
+    },
+    "get_stored_lock_logs": {
+      "name": "Gespeicherten Schlossverlauf abrufen",
+      "description": "Gibt alle dauerhaft gespeicherten Ereignisse zurück, ohne Bluetooth-Abruf. Ältere Ereignisse werden bei neuen Abrufen nicht gelöscht.",
+      "fields": {
+        "device_id": {
+          "name": "Gerät",
+          "description": "Geräte-ID des offiziellen Schlosses."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "device_not_configured": {
+      "message": "Dieses Gerät ist nicht für Schlossprotokolle eingerichtet."
+    },
+    "fetch_logs_error": {
+      "message": "Das Schlossprotokoll konnte nicht abgerufen werden."
+    }
+  }
+}

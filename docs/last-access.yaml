@@ -1,0 +1,11 @@
+# Standard Entities card. Replace both entity IDs with your Last access sensor.
+type: entities
+title: Letzter Zutritt
+entities:
+  - entity: sensor.YOUR_LOCK_LAST_ACCESS
+    name: Zuletzt geöffnet von
+  - type: attribute
+    entity: sensor.YOUR_LOCK_LAST_ACCESS
+    attribute: last_access_local
+    name: Geöffnet am
+    icon: mdi:clock-outline

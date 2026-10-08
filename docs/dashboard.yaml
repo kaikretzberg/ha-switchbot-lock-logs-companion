@@ -1,0 +1,22 @@
+# Native Markdown card. Replace this entity ID with your Last access sensor.
+type: markdown
+entity_id: sensor.YOUR_LOCK_LAST_ACCESS
+content: |
+  {% set entity = config.entity_id %}
+  {% set de = state_attr(entity, 'language') == 'de' %}
+  {% set history = state_attr(entity, 'history') or [] %}
+  ## {{ 'Wer hat geöffnet?' if de else 'Who unlocked?' }}
+  {% if not has_value(entity) %}
+  {{ 'Schlossprotokoll momentan nicht verfügbar. Gespeicherte Zutritte stehen unten.' if de else 'Lock logs are currently unavailable. Stored accesses appear below.' }}
+  {% endif %}
+  {% if state_attr(entity, 'sync_pending') %}
+  {{ 'Neuer Zutritt wird abgerufen …' if de else 'Fetching the new access …' }}
+  {% endif %}
+  {% for entry in history[:30] %}
+  **{{ entry.name | e }}** · {{ 'geöffnet' if de else 'unlocked' }}
+  <br>{{ entry.time | e }}
+
+  ---
+  {% else %}
+  {{ 'Noch keine Fingerabdruck-Zutritte gespeichert.' if de else 'No fingerprint accesses stored yet.' }}
+  {% endfor %}

@@ -1,0 +1,206 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This lock is already configured for log tracking.",
+      "no_locks_found": "No SwitchBot locks found. Please configure a SwitchBot lock in the core SwitchBot integration first.",
+      "not_loaded": "The integration is not loaded. Reload the lock history integration and try again."
+    },
+    "error": {
+      "device_not_found": "The selected device was not found.",
+      "unknown": "An unexpected error occurred.",
+      "invalid_name": "Names must be at most 100 characters.",
+      "save_failed": "Could not save names. Please try again."
+    },
+    "step": {
+      "user": {
+        "title": "Select SwitchBot Lock",
+        "description": "Select a lock from the official SwitchBot Bluetooth integration. The wizard will download its current history and guide you through naming user IDs.",
+        "data": {
+          "device_id": "Lock device"
+        }
+      },
+      "users": {
+        "title": "Name your users",
+        "description": "The following IDs were found in the logs. Enter a name for each ID below.\n\nAutomatic name assignment is unavailable: The SwitchBot app manages the names; the lock history only supplies user IDs. Compare the times below with the iOS / Android app.\n\nSwitchBot app Home → Select your lock → Event log\n\n{count} unique events available. Times use your Home Assistant time zone. Previously saved IDs are also included. Existing names are prefilled; an empty field removes the mapping."
+      },
+      "fetch_failed": {
+        "title": "Could not download history",
+        "description": "Check that the lock is reachable. Retry, or edit saved mappings and the last available history.",
+        "menu_options": {
+          "retry": "Retry download",
+          "users": "Edit available users"
+        }
+      },
+      "no_users": {
+        "title": "No user IDs found",
+        "description": "The fetched history has no recognized user IDs or saved names. Unlock once with your fingerprint or keypad, then retry. App events can have no user ID.",
+        "menu_options": {
+          "retry": "Retry download",
+          "review": "Review history and finish"
+        }
+      },
+      "review": {
+        "title": "Review history and finish",
+        "description": "Your user mappings have been saved. This is the history we could create:\n\n**{status}**\n\n{count} fingerprint accesses available. The latest 15 are shown below.\n\n{events}\n\nThe integration is ready. The Last access sensor shows the latest name, with the timestamp and latest 100 accesses in its attributes. New live accesses appear in Activity. Open Configure later to download history and name IDs again. Use the standard Entities, Markdown or Activity dashboard cards; templates are in docs/DASHBOARD.md."
+      }
+    },
+    "progress": {
+      "fetch_history": "Downloading history from {device_name}. This can take up to 3 minutes.\n\nUp to 100 read requests are made individually over Bluetooth. Duplicate entries are merged. Please keep this window open."
+    },
+    "create_entry": {
+      "default": "Setup is complete. The integration is ready to use. Your user mappings have been saved. Open Configure to download history again and edit names."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_activity": {
+        "name": "Last activity"
+      },
+      "last_user": {
+        "name": "Last user"
+      },
+      "last_action": {
+        "name": "Last action",
+        "state": {
+          "lock": "Locked",
+          "unlock": "Unlocked",
+          "unlatch": "Unlatched",
+          "jammed": "Jammed",
+          "unlock_failed": "Unlock failed",
+          "lock_failed": "Lock failed",
+          "unknown": "Unknown action"
+        }
+      },
+      "log_count": {
+        "name": "Log count"
+      },
+      "last_access": {
+        "name": "Last access"
+      }
+    }
+  },
+  "exceptions": {
+    "device_not_configured": {
+      "message": "This device is not configured for lock logs. Add it via the integration setup first."
+    },
+    "fetch_logs_error": {
+      "message": "Failed to fetch lock logs from the device."
+    }
+  },
+  "services": {
+    "get_lock_logs": {
+      "name": "Get lock logs",
+      "description": "Retrieve lock operation history and update sensors.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The lock device ID."
+        },
+        "max_entries": {
+          "name": "Maximum entries",
+          "description": "Maximum number of log entries to retrieve."
+        },
+        "base_time": {
+          "name": "Start time",
+          "description": "Unix timestamp for the history cursor (uint32, 0 = all)."
+        }
+      }
+    },
+    "set_lock_user_name": {
+      "name": "Set lock user name",
+      "description": "Map a user ID to a friendly name for lock logs.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The lock device ID."
+        },
+        "user_id": {
+          "name": "User ID",
+          "description": "User ID from lock logs (found in payload, typically 0-255)."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Friendly name for this user (e.g., \"Dad's Fingerprint\", \"Guest Code\")."
+        }
+      }
+    },
+    "delete_lock_user_name": {
+      "name": "Delete lock user name",
+      "description": "Remove a user name mapping.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The lock device ID."
+        },
+        "user_id": {
+          "name": "User ID",
+          "description": "User ID to remove."
+        }
+      }
+    },
+    "get_stored_lock_logs": {
+      "name": "Get stored lock history",
+      "description": "Return all persistently archived events without a Bluetooth download. New downloads do not delete older events.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Device ID of the official lock."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage lock history",
+        "menu_options": {
+          "fetch_users": "Wizard: download history and set up users",
+          "polling": "Change polling interval"
+        }
+      },
+      "polling": {
+        "title": "Polling interval",
+        "data": {
+          "poll_interval": "Polling interval (minutes, 5–1440)"
+        }
+      },
+      "users": {
+        "title": "Name your users",
+        "description": "The following IDs were found in the logs. Enter a name for each ID below.\n\nAutomatic name assignment is unavailable: The SwitchBot app manages the names; the lock history only supplies user IDs. Compare the times below with the iOS / Android app.\n\nSwitchBot app Home → Select your lock → Event log\n\n{count} unique events available. Times use your Home Assistant time zone. Previously saved IDs are also included. Existing names are prefilled; an empty field removes the mapping."
+      },
+      "fetch_failed": {
+        "title": "Could not download history",
+        "description": "Check that the lock is reachable. Retry, or edit saved mappings and the last available history.",
+        "menu_options": {
+          "retry": "Retry download",
+          "users": "Edit available users"
+        }
+      },
+      "no_users": {
+        "title": "No user IDs found",
+        "description": "The fetched history has no recognized user IDs or saved names. Unlock once with your fingerprint or keypad, then retry. App events can have no user ID.",
+        "menu_options": {
+          "retry": "Retry download",
+          "review": "Review history and finish"
+        }
+      },
+      "review": {
+        "title": "Review history and finish",
+        "description": "Your user mappings have been saved. This is the history we could create:\n\n**{status}**\n\n{count} fingerprint accesses available. The latest 15 are shown below.\n\n{events}\n\nThe integration is ready. The Last access sensor shows the latest name, with the timestamp and latest 100 accesses in its attributes. New live accesses appear in Activity. Open Configure later to download history and name IDs again. Use the standard Entities, Markdown or Activity dashboard cards; templates are in docs/DASHBOARD.md."
+      }
+    },
+    "progress": {
+      "fetch_history": "Downloading history from {device_name}. This can take up to 3 minutes.\n\nUp to 100 read requests are made individually over Bluetooth. Duplicate entries are merged. Please keep this window open."
+    },
+    "error": {
+      "invalid_name": "Names must be at most 100 characters.",
+      "save_failed": "Could not save names. Please try again."
+    },
+    "abort": {
+      "not_loaded": "The integration is not loaded. Reload the lock history integration and try again."
+    },
+    "create_entry": {
+      "default": "Setup is complete. The integration is ready to use. Your user mappings have been saved. Open Configure to download history again and edit names."
+    }
+  }
+}
