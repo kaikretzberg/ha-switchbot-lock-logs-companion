@@ -13,6 +13,7 @@ from custom_components.switchbot_lock_logs.lock_logs.client import (
     DeviceUnavailable,
     LockLogsClient,
     discover_locks,
+    inspect_transport,
 )
 from custom_components.switchbot_lock_logs.lock_logs.parser import (
     ProtocolError,
@@ -68,9 +69,8 @@ def test_unknown_codes_and_payload():
 
 
 @pytest.mark.parametrize("mode", [AESMode.CTR, AESMode.GCM])
-async def test_actual_241_encryption_and_atomicity(hass, parent, mode):
+async def test_actual_library_encryption_and_atomicity(hass, parent, mode):
     """Exercise real library encryption, decrypt and shared command lock."""
-    assert version("PySwitchbot") == "2.4.1"
     lock = parent.lock
     lock._encryption_mode = mode
     lock._iv = b"\x01" * (12 if mode == AESMode.GCM else 16)
@@ -153,18 +153,69 @@ async def test_reload_resolves_new_instance(hass, parent):
     assert resolve_device(hass, target) is not original
 
 
-async def test_future_library_fails_before_sending(hass, parent):
+async def test_future_library_with_unchanged_transport_is_supported(hass, parent):
     client = LockLogsClient(hass, discover_locks(hass)[parent.device.id])
+    inspect_transport.cache_clear()
     with (
         patch(
             "custom_components.switchbot_lock_logs.lock_logs.client.version",
-            return_value="3.0.0",
+            return_value="9.0.0",
         ),
+        patch.object(
+            client,
+            "_send_locked",
+            new_callable=AsyncMock,
+            side_effect=[b"\x01", bytes.fromhex(PACKETS["empty"])],
+        ),
+    ):
+        assert await client.fetch() == []
+        assert client.library_version == "9.0.0"
+    inspect_transport.cache_clear()
+
+
+async def test_changed_transport_fails_before_sending(hass, parent):
+    client = LockLogsClient(hass, discover_locks(hass)[parent.device.id])
+    inspect_transport.cache_clear()
+
+    async def changed_send(self, key, **kwargs):
+        raise AssertionError("Changed transport must never be called")
+
+    with (
+        patch.object(type(parent.lock), "_send_command", changed_send),
         patch.object(client, "_send_locked", new_callable=AsyncMock) as send,
     ):
-        with pytest.raises(CompatibilityError):
+        with pytest.raises(CompatibilityError, match="_send_command"):
             await client.fetch()
         send.assert_not_called()
+    inspect_transport.cache_clear()
+
+
+async def test_transport_inspection_runs_outside_event_loop(hass, parent):
+    import threading
+
+    client = LockLogsClient(hass, discover_locks(hass)[parent.device.id])
+    inspect_transport.cache_clear()
+    loop_thread = threading.get_ident()
+    installed = version("PySwitchbot")
+
+    def metadata_version(name):
+        assert threading.get_ident() != loop_thread
+        return installed
+
+    with (
+        patch(
+            "custom_components.switchbot_lock_logs.lock_logs.client.version",
+            metadata_version,
+        ),
+        patch.object(
+            client,
+            "_send_locked",
+            new_callable=AsyncMock,
+            side_effect=[b"\x01", bytes.fromhex(PACKETS["empty"])],
+        ),
+    ):
+        await client.fetch()
+    inspect_transport.cache_clear()
 
 
 async def test_partial_response_not_silently_successful(hass, parent):

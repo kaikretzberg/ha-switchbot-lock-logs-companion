@@ -6,9 +6,14 @@ No class/instance patching, new device or connection, or copied cipher code.
 
 from __future__ import annotations
 
+import ast
 import asyncio
+import hashlib
+import inspect
 import logging
+import textwrap
 from dataclasses import dataclass
+from functools import lru_cache
 from importlib.metadata import version
 from typing import Any
 
@@ -23,6 +28,30 @@ from .parser import ProtocolError, parse_response
 BASE_TIME_COMMAND = "57001401"
 READ_COMMAND = "57001405"
 _LOGGER = logging.getLogger(__name__)
+
+# The command/locking/IV choreography adapted below is identical in the audited
+# 2.4.1, 2.9.0 and 3.0.0 releases. AST hashes ignore formatting and comments.
+# Check the actual inherited methods, not a package version or method names alone.
+_TRANSPORT_HASHES = {
+    "_send_command": "840c231b49584fc06b11692f095243392c92fb60c9abb92b783d5198264a55a1",
+    "_execute_forced_disconnect": "45ad8cfa65a60f91de602fd525be01b336a3ff47dbede30385c4b372647c25cd",
+    "_execute_disconnect": "f43ff0ebc022bf6631e85991c5fa4f9cb3271526aaec3757128e18ff30786bd7",
+}
+
+
+@lru_cache(maxsize=16)
+def inspect_transport(device_type: type) -> tuple[str, str | None]:
+    """Inspect installed code once per runtime class, only in an executor job."""
+    installed = version("PySwitchbot")
+    for name, expected in _TRANSPORT_HASHES.items():
+        try:
+            source = textwrap.dedent(inspect.getsource(getattr(device_type, name)))
+            actual = hashlib.sha256(ast.dump(ast.parse(source)).encode()).hexdigest()
+        except AttributeError, OSError, TypeError, SyntaxError:
+            return installed, name
+        if actual != expected:
+            return installed, name
+    return installed, None
 
 
 class DeviceUnavailable(RuntimeError):
@@ -137,6 +166,7 @@ class LockLogsClient:
     def __init__(self, hass: Any, target: LockTarget) -> None:
         self.hass = hass
         self.target = target
+        self.library_version: str | None = None
 
     async def fetch(self, base_time: int = 0, max_entries: int = 20) -> list[LogEntry]:
         """Bound the entire transaction, including time waiting for the BLE lock."""
@@ -145,11 +175,15 @@ class LockLogsClient:
         if type(max_entries) is not int or not 1 <= max_entries <= 100:
             raise ValueError("max_entries must be between 1 and 100")
         device = resolve_device(self.hass, self.target)
-        # Fail explicitly when the audited private contract changes. Never send
-        # unknown encrypted data based merely on method names/signatures.
-        if version("PySwitchbot") != "2.4.1":
+        # Metadata and source inspection involve disk I/O. Future releases with
+        # unchanged transaction choreography remain compatible automatically.
+        self.library_version, incompatible = await self.hass.async_add_executor_job(
+            inspect_transport, type(device)
+        )
+        if incompatible:
             raise CompatibilityError(
-                "SwitchBot Lock Logs requires PySwitchbot 2.4.1. Update this integration to a version compatible with your Home Assistant installation."
+                f"PySwitchbot {self.library_version} changed the required transport "
+                f"method {incompatible}. Update SwitchBot Lock Logs for this transport."
             )
         required = (
             "_ensure_encryption_initialized",
@@ -208,7 +242,7 @@ class LockLogsClient:
     async def _send_locked(device: Any, key: str) -> bytes:
         """Adapt the encrypted 2.4.1 send body without reacquiring its lock.
 
-        Mirrors upstream device.py 1115-1150, including the GCM IV increment.
+        Mirrors the audited encrypted send transaction, including the GCM IV increment.
         The library still performs encryption, decryption, connection and retries.
         """
         from switchbot.devices.device import AESMode

@@ -1172,3 +1172,41 @@ async def test_sync_has_no_periodic_timer_and_diagnostics_preserve_raws(hass, pa
     assert "Private name" not in str(report)
     assert "encryption_key" not in str(report)
     await manager.async_shutdown()
+
+
+async def test_diagnostics_explain_contract_failure_without_transport_secrets(
+    hass, parent
+):
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+
+    from custom_components.switchbot_lock_logs.diagnostics import (
+        async_get_config_entry_diagnostics,
+    )
+    from custom_components.switchbot_lock_logs.lock_logs.client import (
+        CompatibilityError,
+    )
+
+    entry, manager = await setup_coordinator(hass, parent)
+    manager.client.library_version = "9.0.0"
+    error = "PySwitchbot 9.0.0 changed the required transport method _send_command"
+    with patch.object(manager.client, "fetch", side_effect=CompatibilityError(error)):
+        with pytest.raises(UpdateFailed):
+            await manager.fetch_manual(0, 1)
+    report = await async_get_config_entry_diagnostics(hass, entry)
+    assert report["pyswitchbot_version"] == "9.0.0"
+    assert report["last_fetch_error"] == {
+        "type": "CompatibilityError",
+        "message": error,
+    }
+    with patch.object(
+        manager.client, "fetch", side_effect=RuntimeError("secret command")
+    ):
+        with pytest.raises(UpdateFailed):
+            await manager.fetch_manual(0, 1)
+    report = await async_get_config_entry_diagnostics(hass, entry)
+    assert report["last_fetch_error"] == {"type": "RuntimeError"}
+    assert "secret command" not in str(report)
+    with patch.object(manager.client, "fetch", return_value=[]):
+        await manager.fetch_manual(0, 1)
+    assert manager.last_fetch_error is None
+    await manager.async_shutdown()

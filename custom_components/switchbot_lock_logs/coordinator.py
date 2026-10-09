@@ -13,7 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from .access import fingerprint_accesses
 from .const import DOMAIN
-from .lock_logs.client import LockLogsClient
+from .lock_logs.client import CompatibilityError, LockLogsClient
 from .lock_logs.models import LogEntry
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
         self.access_entity_id: str | None = None
         self._last_notified_access: LogEntry | None = None
         self.last_update_success = False
+        self.last_fetch_error: dict[str, str] | None = None
         self._activity_lock = asyncio.Lock()
         self._activity_records: list[LogEntry] = []
         self._activity_raws: set[str] = set()
@@ -57,10 +58,17 @@ class LogsCoordinator(DataUpdateCoordinator[list[LogEntry]]):
             try:
                 records = await self.client.fetch(base_time, max_entries)
                 await self.store.append_history(self.target.device_id, records)
+                self.last_fetch_error = None
                 return records
             except Exception as err:
                 # HA Bluetooth exceptions vary by transport; cancellation derives
                 # from BaseException and is deliberately not caught.
+                # Never export arbitrary transport exceptions: they may include
+                # device addresses or encrypted commands. Our contract errors
+                # contain only library version and method names.
+                self.last_fetch_error = {"type": type(err).__name__}
+                if isinstance(err, CompatibilityError):
+                    self.last_fetch_error["message"] = str(err)
                 raise UpdateFailed(
                     f"Cannot read SwitchBot lock history: {err}"
                 ) from err

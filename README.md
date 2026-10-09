@@ -13,9 +13,11 @@ Home Assistant entities, cards and automations.
 
 ### Requirements
 
-- Home Assistant **2026.9.4 or later**, with **PySwitchbot 2.4.1** provided by the
-  official SwitchBot Bluetooth integration. Compatibility depends on that
-  library version; no separate Python package installation is needed.
+- Home Assistant **2026.9.4 or later**, with PySwitchbot provided by the
+  official SwitchBot Bluetooth integration. The encrypted transport is verified
+  against **2.4.1, 2.9.0 and 3.0.0**. New versions with the same transport contract
+  are accepted automatically; incompatible changes require an integration update.
+  No separate Python package installation is needed.
 - Your lock is already configured in **SwitchBot Bluetooth** and reachable
   through Home Assistant Bluetooth or a compatible Bluetooth proxy.
 - For fingerprint access names: a **SwitchBot Lock Pro** and **Keypad Touch**.
@@ -151,9 +153,11 @@ Report problems in [GitHub Issues](https://github.com/kaikretzberg/ha-switchbot-
 
 ### Voraussetzungen
 
-- Home Assistant **ab 2026.9.4** mit **PySwitchbot 2.4.1** aus der offiziellen
-  SwitchBot-Bluetooth-Integration. Die Kompatibilität hängt von dieser
-  Bibliotheksversion ab; du musst kein Python-Paket zusätzlich installieren.
+- Home Assistant **ab 2026.9.4** mit PySwitchbot aus der offiziellen
+  SwitchBot-Bluetooth-Integration. Die verschlüsselte Schnittstelle ist mit
+  **2.4.1, 2.9.0 und 3.0.0** geprüft. Neue Versionen mit demselben Ablauf werden
+  automatisch akzeptiert; inkompatible Änderungen benötigen ein Integrationsupdate.
+  Du musst kein Python-Paket zusätzlich installieren.
 - Dein Schloss ist in **SwitchBot Bluetooth** eingerichtet und über Bluetooth
   oder einen kompatiblen Bluetooth-Proxy erreichbar.
 - Für Namen bei Fingerabdruck-Zutritten: **SwitchBot Lock Pro** und **Keypad Touch**.

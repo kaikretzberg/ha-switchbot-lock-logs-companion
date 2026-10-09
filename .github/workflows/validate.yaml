@@ -7,6 +7,17 @@ permissions:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - homeassistant: '2026.9.4'
+            pyswitchbot: official
+          - homeassistant: '2026.10.0'
+            pyswitchbot: official
+          - homeassistant: '2026.10.0'
+            pyswitchbot: '3.0.0'
+    name: tests (HA ${{ matrix.homeassistant }}, PySwitchbot ${{ matrix.pyswitchbot }})
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -15,7 +26,10 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - run: uv venv .venv
       - run: uv pip install --python .venv/bin/python -r requirements-dev.txt
+      - run: uv pip install --python .venv/bin/python homeassistant==${{ matrix.homeassistant }}
       - run: .venv/bin/python scripts/install_test_dependencies.py
+      - if: matrix.pyswitchbot != 'official'
+        run: uv pip install --python .venv/bin/python --no-deps PySwitchbot==${{ matrix.pyswitchbot }}
       - run: .venv/bin/ruff check .
       - run: .venv/bin/ruff format --check .
       - run: .venv/bin/mypy
