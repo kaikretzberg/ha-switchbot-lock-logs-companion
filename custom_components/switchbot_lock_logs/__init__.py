@@ -2,7 +2,6 @@
 
 from typing import Any
 
-import voluptuous as vol
 from homeassistant.const import Platform
 from homeassistant.core import SupportsResponse
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -17,6 +16,7 @@ from .access import fingerprint_accesses
 from .const import DEFAULT_MAX_ENTRIES, DOMAIN
 from .coordinator import LogsCoordinator
 from .lock_logs.client import resolve_target
+from .schema import vol
 from .storage import CompanionStore
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)

@@ -5,6 +5,7 @@
 - Support PySwitchbot 2.9.0 used by Home Assistant 2026.10 and verify the same encrypted transport in 2.4.1 and 3.0.0.
 - Replace the exact-version restriction with cached transport-contract inspection. Future versions with unchanged command and disconnect choreography are accepted; incompatible changes stop before history commands are sent.
 - Move package metadata and source inspection into the Home Assistant executor to avoid blocking the event loop.
+- Use Home Assistant's native schema implementation for setup and services, supporting both Voluptuous and Probatio.
 - Include the installed library version and sanitized last-fetch error in native diagnostics.
 - Test the official Home Assistant dependency combinations and PySwitchbot 3.0.0 in CI.
 

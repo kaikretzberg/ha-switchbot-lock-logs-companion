@@ -4,7 +4,6 @@ import asyncio
 import html
 from typing import Any
 
-import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
@@ -21,6 +20,7 @@ from .const import DOMAIN
 from .coordinator import LogsCoordinator
 from .lock_logs.client import discover_locks
 from .lock_logs.models import LogEntry
+from .schema import vol
 from .storage import CompanionStore
 
 
