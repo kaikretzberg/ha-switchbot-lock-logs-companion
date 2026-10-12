@@ -45,7 +45,7 @@ def parse_response(
             else None
         )
     elif model == "lock_ultra":
-        # 99 03 correlated with a fingerprint unlock on 2026-10-12 19:45:50.
+        # 99 03 correlated with a fingerprint unlock in the companion app.
         # Keep BOTH credential bytes: 0b01 must not collide with 0b00. The
         # resulting number is our opaque mapping key, not an asserted app ID.
         user_id = (
