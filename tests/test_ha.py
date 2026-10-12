@@ -29,6 +29,33 @@ RECORD = bytes.fromhex("016553f10002010164590307010000")
 OPEN_RECORD = bytes.fromhex("016553f10000020f007b0307000000")
 
 
+async def test_existing_ultra_archive_is_redecoded_and_mapping_survives(hass, parent):
+    from dataclasses import asdict, replace
+
+    from custom_components.switchbot_lock_logs.access import fingerprint_accesses
+
+    store = CompanionStore(hass)
+    packet = bytes.fromhex("016553f10000020f0099030b010000")
+    decoded = parse_response(packet, parent.device.id, "lock_ultra")
+    old = replace(decoded, user_id=None)
+    store.data["devices"][parent.device.id] = {
+        "history": [asdict(old)],
+        "users": {"267": "Assigned name"},
+    }
+    restored = store.history(parent.device.id)
+    assert restored[0].user_id == 267
+    assert restored[0].raw == old.raw
+    assert (
+        fingerprint_accesses(restored)[0].as_dict(store.users(parent.device.id))[
+            "user_name"
+        ]
+        == "Assigned name"
+    )
+    await store.append_history(parent.device.id, [decoded])
+    assert len(store.history(parent.device.id)) == 1
+    assert store.users(parent.device.id) == {"267": "Assigned name"}
+
+
 @pytest.mark.parametrize("model", ["lock", "lock_pro", "lock_lite", "lock_ultra"])
 async def test_discovery_models(hass, parent, model):
     hass.config_entries.async_update_entry(

@@ -155,7 +155,7 @@
         },
         "user_id": {
           "name": "Benutzer-ID",
-          "description": "ID aus dem Protokoll (0–255)."
+          "description": "Zuordnungs-ID aus dem Protokoll (0–65535). Beim Lock Ultra werden beide Kennungsbytes erhalten; Namen über den Zeitstempel mit der App abgleichen."
         },
         "name": {
           "name": "Name",
@@ -173,7 +173,7 @@
         },
         "user_id": {
           "name": "Benutzer-ID",
-          "description": "Zu löschende ID (0–255)."
+          "description": "Zu löschende Zuordnungs-ID (0–65535)."
         }
       }
     },

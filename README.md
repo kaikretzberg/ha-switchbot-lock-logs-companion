@@ -20,7 +20,7 @@ Home Assistant entities, cards and automations.
   No separate Python package installation is needed.
 - Your lock is already configured in **SwitchBot Bluetooth** and reachable
   through Home Assistant Bluetooth or a compatible Bluetooth proxy.
-- For fingerprint access names: a **SwitchBot Lock Pro** and **Keypad Touch**.
+- For fingerprint access names: a **SwitchBot Lock Pro or Lock Ultra** with a fingerprint keypad.
   Other recognized SwitchBot lock models can expose their available history;
   the access view requires a fingerprint record with a user ID.
 - **HACS** for the recommended installation.
@@ -160,7 +160,7 @@ Report problems in [GitHub Issues](https://github.com/kaikretzberg/ha-switchbot-
   Du musst kein Python-Paket zusätzlich installieren.
 - Dein Schloss ist in **SwitchBot Bluetooth** eingerichtet und über Bluetooth
   oder einen kompatiblen Bluetooth-Proxy erreichbar.
-- Für Namen bei Fingerabdruck-Zutritten: **SwitchBot Lock Pro** und **Keypad Touch**.
+- Für Namen bei Fingerabdruck-Zutritten: **SwitchBot Lock Pro oder Lock Ultra** mit Fingerabdruck-Keypad.
   Andere erkannte SwitchBot-Schlossmodelle können ihren verfügbaren Verlauf
   liefern; die Zutrittsansicht benötigt Fingerabdruck-Ereignisse mit Benutzer-ID.
 - **HACS** für die empfohlene Installation.

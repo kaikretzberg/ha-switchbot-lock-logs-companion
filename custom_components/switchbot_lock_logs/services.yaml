@@ -40,7 +40,7 @@ set_lock_user_name:
       selector:
         number:
           min: 0
-          max: 255
+          max: 65535
           mode: box
     name:
       required: true
@@ -62,7 +62,7 @@ delete_lock_user_name:
       selector:
         number:
           min: 0
-          max: 255
+          max: 65535
           mode: box
 
 get_stored_lock_logs:

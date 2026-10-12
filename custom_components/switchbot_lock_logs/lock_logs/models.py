@@ -29,6 +29,8 @@ class LogEntry:
         )
         if self.model == "lock_pro":
             return self._lock_pro_labels(result)
+        if self.model == "lock_ultra":
+            return self._lock_ultra_labels(result)
         # Labels are from the reference fork, not independent protocol validation.
         result["action_name"] = ACTION_NAMES.get(self.action, f"unknown_{self.action}")
         result["source_name"] = SOURCE_NAMES.get(self.source, f"unknown_{self.source}")
@@ -40,6 +42,27 @@ class LogEntry:
             4: "failed",
         }.get(self.action)
         result["interpretation"] = "reference_fork"
+        return result
+
+    def _lock_ultra_labels(self, result: dict[str, Any]) -> dict[str, Any]:
+        """Label the credential-backed Ultra fingerprint sequence only."""
+        action = {
+            (2, 15, 0): "unlock",
+            (1, 15, 64): "unlatch",
+        }.get((self.source, self.action, self.value))
+        known = action is not None and self.user_id is not None
+        result.update(
+            action_name=action
+            if known
+            else f"unknown_event_{self.source}_{self.action}_{self.value}",
+            source_name="fingerprint" if known else f"unknown_{self.action}",
+            result="success" if known else None,
+            interpretation="lock_ultra_app_correlated"
+            if known
+            else "lock_ultra_unverified",
+            user_id_interpretation="opaque_keypad_credential" if known else None,
+            credential_hex=self.payload[4:8] if known else None,
+        )
         return result
 
     def _lock_pro_labels(self, result: dict[str, Any]) -> dict[str, Any]:

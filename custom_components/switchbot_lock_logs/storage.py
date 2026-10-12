@@ -11,6 +11,24 @@ from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
 from .lock_logs.models import LogEntry
+from .lock_logs.parser import parse_response
+
+
+def restore_record(record: dict[str, Any]) -> LogEntry:
+    """Apply the Ultra decoder to old raw archives without deleting any bytes."""
+    original = LogEntry(**record)
+    if original.model == "lock_ultra":
+        try:
+            decoded = parse_response(
+                b"\x01" + bytes.fromhex(original.raw),
+                original.device_id,
+                original.model,
+            )
+        except ValueError:
+            return original
+        if decoded is not None:
+            return decoded
+    return original
 
 
 class CompanionStore:
@@ -83,7 +101,7 @@ class CompanionStore:
     def history(self, device_id: str) -> list[LogEntry]:
         """Restore the complete archive; user names are resolved at display time."""
         return [
-            LogEntry(**record)
+            restore_record(record)
             for record in self.data["devices"].get(device_id, {}).get("history", [])
         ]
 
@@ -115,7 +133,7 @@ class CompanionStore:
     def activity_records(self, device_id: str) -> list[LogEntry]:
         """Restore accesses already handed to Recorder across reloads."""
         return [
-            LogEntry(**record)
+            restore_record(record)
             for record in self.data["devices"].get(device_id, {}).get("activity", [])
         ]
 

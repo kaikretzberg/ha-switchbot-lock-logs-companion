@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.7 — 2026-10-12
+
+- Decode Lock Ultra fingerprint unlock/unlatch records with the observed `99 03` payload format; keep other methods and unknown actions out of the access view.
+- Preserve both credential bytes as a stable mapping key and allow mapping IDs up to 65535.
+- Reinterpret existing Ultra archive records from their original raw bytes without clearing history or saved names.
+
 ## 2.0.6 — 2026-10-09
 
 - Support PySwitchbot 2.9.0 used by Home Assistant 2026.10 and verify the same encrypted transport in 2.4.1 and 3.0.0.

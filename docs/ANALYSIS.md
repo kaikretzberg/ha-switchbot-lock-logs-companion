@@ -25,3 +25,13 @@ unlock/unlatch records for the same user within 15 seconds; separate unlocks rem
 Protocol provenance: [original integration](https://github.com/hacker-home-chile/ha-switchbot-lock-logs)
 and [PySwitchbot reference](https://github.com/hacker-home-chile/pySwitchbot).
 License notices remain in LICENSE and PYSWITCHBOT_LICENSE.
+
+Lock Ultra uses the same `(2, 15, 0)` / `(1, 15, 64)` opening sequence with
+six-byte payloads beginning `99 03`. A supplied app event confirmed this pattern
+as a fingerprint opening. Bytes 2–3 are preserved together as an opaque mapping
+key encoded little-endian: `0e00` maps to 14, `0b01` maps to 267. These mapping keys
+are not asserted to equal the IDs displayed by the SwitchBot app; use timestamps
+to identify names. `credential_hex` exposes the original two bytes. Other payload
+prefixes, actions 19/22 and records without credentials remain unknown and are
+excluded from the access view. Old Ultra archive records are redecoded from their
+unchanged raw bytes when loaded, so another full download is not required.

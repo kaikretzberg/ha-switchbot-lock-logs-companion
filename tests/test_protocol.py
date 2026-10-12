@@ -23,6 +23,56 @@ from custom_components.switchbot_lock_logs.lock_logs.parser import (
 PACKETS = json.loads((Path(__file__).parent / "fixtures/packets.json").read_text())
 
 
+@pytest.mark.parametrize(
+    "header,action", [("00020f00", "unlock"), ("00010f40", "unlatch")]
+)
+@pytest.mark.parametrize("credential,user", [("0e00", 14), ("0b01", 267), ("0b00", 11)])
+def test_ultra_fingerprint_credentials(header, action, credential, user):
+    packet = bytes.fromhex("016553f100" + header + "9903" + credential + "0000")
+    record = parse_response(packet, "door", "lock_ultra")
+    assert record.user_id == user
+    data = record.as_dict({str(user): "Assigned name"})
+    assert data["action_name"] == action
+    assert data["source_name"] == "fingerprint"
+    assert data["user_name"] == "Assigned name"
+    assert data["credential_hex"] == credential
+    assert data["user_id_interpretation"] == "opaque_keypad_credential"
+    # Model-specific: never reuse the Ultra pattern on Lock Pro.
+    assert parse_response(packet, "door", "lock_pro").user_id is None
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "00020f0099010b010000",  # unconfirmed credential method
+        "00020f00990300000000",  # no credential
+        "00020f0099030e000001",  # unknown payload extension
+        "00021600000000000000",  # unknown action 22
+        "00011300000000000000",  # unknown action 19
+        "00010f00990000000000",  # does not represent a fingerprint opening
+    ],
+)
+def test_ultra_unknown_records_stay_out_of_accesses(body):
+    from custom_components.switchbot_lock_logs.access import fingerprint_accesses
+
+    record = parse_response(bytes.fromhex("016553f100" + body), "door", "lock_ultra")
+    assert record.user_id is None
+    assert record.as_dict({})["interpretation"] == "lock_ultra_unverified"
+    assert fingerprint_accesses([record]) == []
+
+
+def test_ultra_unlock_and_unlatch_are_one_access():
+    from custom_components.switchbot_lock_logs.access import fingerprint_accesses
+
+    unlock = parse_response(
+        bytes.fromhex("016553f10000020f0099030e000000"), "door", "lock_ultra"
+    )
+    unlatch = parse_response(
+        bytes.fromhex("016553f10500010f4099030e000000"), "door", "lock_ultra"
+    )
+    assert fingerprint_accesses([unlatch, unlock]) == [unlock]
+
+
 def test_parser():
     log = parse_response(bytes.fromhex(PACKETS["unlock_keypad_user_7"]), "door")
     assert (

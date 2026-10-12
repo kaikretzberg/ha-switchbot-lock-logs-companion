@@ -44,6 +44,19 @@ def parse_response(
             and data[5:8] in (b"\x02\x0f\x00", b"\x01\x0f\x40")
             else None
         )
+    elif model == "lock_ultra":
+        # 99 03 correlated with a fingerprint unlock on 2026-10-12 19:45:50.
+        # Keep BOTH credential bytes: 0b01 must not collide with 0b00. The
+        # resulting number is our opaque mapping key, not an asserted app ID.
+        user_id = (
+            int.from_bytes(payload[2:4], "little")
+            if len(payload) == 6
+            and payload[:2] == b"\x99\x03"
+            and any(payload[2:4])
+            and payload[4:] == b"\x00" * 2
+            and data[5:8] in (b"\x02\x0f\x00", b"\x01\x0f\x40")
+            else None
+        )
     return LogEntry(
         timestamp,
         data[4],

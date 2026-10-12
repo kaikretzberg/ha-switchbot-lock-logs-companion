@@ -107,7 +107,7 @@ def register_services(hass: Any) -> None:
     )
     user: dict[Any, Any] = {
         **device,
-        vol.Required("user_id"): vol.All(cv.positive_int, vol.Range(max=255)),
+        vol.Required("user_id"): vol.All(cv.positive_int, vol.Range(max=65535)),
     }
     hass.services.async_register(
         DOMAIN,

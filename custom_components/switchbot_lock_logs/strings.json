@@ -116,7 +116,7 @@
         },
         "user_id": {
           "name": "User ID",
-          "description": "User ID from lock logs (found in payload, typically 0-255)."
+          "description": "User mapping ID from lock logs (0-65535). Lock Ultra preserves both credential bytes; compare timestamps with the app to assign names."
         },
         "name": {
           "name": "Name",
